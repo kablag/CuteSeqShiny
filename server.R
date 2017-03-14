@@ -66,64 +66,76 @@ shinyServer(function(input, output, session) {
 
   observe({
     req(input$plainFeaturesInput, values$sequence)
-
-      dt <- tryCatch(
-        fread(input$plainFeaturesInput,
-              sep = input$plainFeaturesInputSep,
-              header = FALSE,
-              fill = TRUE),
-        error = function(e) NULL)
-      if (is.null(dt))
-        return(NULL)
-      if (typeof(dt[[1]]) == "integer")
-        dt <- dt[, -1]
-      if (ncol(dt) > 2) {
-        switch(as.character(ncol(dt)),
-               "3" = {
+    tblSeparator <- switch(input$plainFeaturesInputSep,
+                           "auto" = ifelse(grepl(";" , input$plainFeaturesInput),
+                                           ";",
+                                           "\t"),
+                           input$plainFeaturesInputSep)
+    dt <- tryCatch(
+      fread(input$plainFeaturesInput,
+            sep = tblSeparator,
+            header = FALSE,
+            fill = TRUE),
+      error = function(e) NULL)
+    if (is.null(dt) || !nrow(dt))
+      return(NULL)
+    if (typeof(dt[[1]]) == "integer")
+      dt <- dt[, -1]
+    if (ncol(dt) >= 2) {
+      switch(as.character(ncol(dt)),
+             "2" = {
+               dt[, type := "primer"]
+               dt[, maxMismatch := 0]
+             },
+             "3" = {
+               if (typeof(dt[[3]]) != "character")
+                 return(NULL)
+               dt[, maxMismatch := 0]
+             },
+             "4" = {
+               if (typeof(dt[[4]]) != "integer") {
+                 dt[[4]] <- NULL
                  dt[, maxMismatch := 0]
-               },
-               "4" = {
-                 if (typeof(dt[[4]]) != "integer") {
-                   dt[[4]] <- NULL
-                   dt[, maxMismatch := 0]
-                 }
-               },
-               {
-                 dt <- dt[, 1:4]
-                 if (typeof(dt[[4]]) != "integer") {
-                   dt[[4]] <- NULL
-                   dt[, maxMismatch := 0]
-                 }
                }
-        )
-        # if (ncol(dt) > 4)
-        #   dt <- dt[, 1:4]
-        setnames(dt, 1:4, c("seqnames", "seq", "type", "maxMismatch"))
-        dt[is.na(maxMismatch), maxMismatch := 0]
-        dt <- dt[seq != "" & seqnames != "" & type != ""]
-        #
-        # dt[, seq := DNAString(seq)]
-        dt <- rbindlist(list(dt, dt),
-                        use.names = TRUE, fill = FALSE, idcol = NULL)
-        dt[, strand := rep(c("+","-"), each = nrow(dt) / 2)]
-        dt[, ID := .I]
-        dt[, seq := clearSeq(seq), by = ID]
-        dt[, c("start", "end") := {
-          res <-
-            Biostrings::matchPattern(
-              switch(strand,
-                     "+" = seq,
-                     "-" = Biostrings::reverseComplement(Biostrings::DNAString(seq))),
-              values$sequence,
-              max.mismatch = maxMismatch)@ranges
-          if (length(res)) list(res[1]@start,
-                                res[1]@start + res[1]@width)
-          else list(-1L, -1L)},
-          by = ID]
-        isolate({
+             },
+             {
+               dt <- dt[, 1:4]
+               if (typeof(dt[[4]]) != "integer") {
+                 dt[[4]] <- NULL
+                 dt[, maxMismatch := 0]
+               }
+             }
+      )
+      # if (ncol(dt) > 4)
+      #   dt <- dt[, 1:4]
+      setnames(dt, 1:4, c("seqnames", "seq", "type", "maxMismatch"))
+      dt[type == "", type := "primer"]
+      dt[is.na(maxMismatch), maxMismatch := 0]
+      dt <- dt[seq != "" & seqnames != "" & type != ""]
+      #
+      # dt[, seq := DNAString(seq)]
+      dt <- rbindlist(list(dt, dt),
+                      use.names = TRUE, fill = FALSE, idcol = NULL)
+      dt[, strand := rep(c("+","-"), each = nrow(dt) / 2)]
+      dt[, ID := .I]
+      dt[, seq := clearSeq(seq), by = ID]
+      dt[, c("start", "end") := {
+        res <-
+          Biostrings::matchPattern(
+            switch(strand,
+                   "+" = seq,
+                   "-" = Biostrings::reverseComplement(Biostrings::DNAString(seq))),
+            values$sequence,
+            max.mismatch = maxMismatch)@ranges
+        if (length(res)) list(res[1]@start,
+                              res[1]@start + res[1]@width)
+        else list(-1L, -1L)},
+        by = ID]
+
+      isolate({
         values$features <- dt
-        })
-      }
+      })
+    }
 
   })
 
@@ -158,19 +170,21 @@ shinyServer(function(input, output, session) {
   output$featuresTbl <- DT::renderDataTable({
     req(values$features)
     dt <- {if (input$showUnmatched)
-                 values$features
+      values$features
       else values$features[start != -1]}
     DT::datatable(dt,
-      selection = "multiple"
+                  selection = "multiple"
     )
   })
 
   output$cuteSeqHtml <- renderUI({
     # input$processCuteSeq
     # isolate({
-    req(values$sequence, values$features)
+    req(values$sequence, values$features, input$colorBy, input$labelBy)
 
     ft <- values$features[start != -1]
+    if (!nrow(ft))
+      return(NULL)
     if (length(input$featuresTbl_rows_selected)) {
       ft <- ft[input$featuresTbl_rows_selected, ]
     }

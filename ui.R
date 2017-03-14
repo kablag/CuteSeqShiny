@@ -24,9 +24,9 @@ shinyUI(fluidPage(
                          "TAAGAGGTCCTTCACCAGCCTCCTCTCCCGGCATTATCCCATCTACCCCTCCACATTCAAGTTTTTGGAAAGATTCTACACTCCCAGTCTCTACTTCCTCACTTCTTCCTTGCTGCCCACGCCATAAACTAGCTGCTGCCTCCAGCATTGCCCTGACACCTAGTGGCTGGTGTCACCAAGACGCTAGACCCAATGGTTATTTATTTATTTATTTACTTATTTTGAGACGGAGTCTCACTCTGTCGCCCAGGCTGGAGTGCAGCGGTGCCATCTCGGCTCACTGCAACTTCCGCCTCCAGGGTTCAAGTGGTTCTCGTGCCTCAGCCTCCCAAGTAGTTTGGACTACAGGTGCCTGCCACCATGTCTGGCTAATTTTTGTATTTTTAGTAGAGACAGGGTTTCACCATGTTGGCCAGGCTTGTCTTAAACTCCTGACCTCAAGTGATCCACCCACCTCGGCCTCCCAAAATGCTAGGATTATAGGCGTGAGCCACCGCACCNGGCCAATGGTTGTTTTTCAGGTCTTCTCTTGCTTGACTTCCCAGAGGGATCCCTTACTGTTGCACCTACCCTTCTGGGAACTCTCTTCCTCTGGCGTCTGTGATATTTCCCTCTCCTGCTGGCTCCTCCCTCTCCAGATGCTGTTTCTCACATCTACTCTCTTCTAGAGAGTGTGGTAGACAGAATAATGGTCACCAAAGATGTCCCTGCATGAATCCCTGGAACTTGTGAATATGATAGGTTAAATGGCCAAAAGGGAATTAAGGTTGCAGATGGAATTAAGCTGACCAATCTCCTGATTTTATTTTATTTTATTTTGTTTTTGAGGTGGAGTTTCGCTCTTGTTGCCCAACTGGAGTGCAATGGTGTGATCTCGGCTCACTGCAACCTCCGCCTGCCAGGTTCGAGAGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCACCCGCCATCATGCCTGGCTAATTTTTTAAATTTTTAGTAGAGACAGGG",
                          "</textarea>",
                          "</div>")),
-             uiOutput("limitSeqSliderUI"),
+             # uiOutput("limitSeqSliderUI"),
              HTML(paste0("<div class='form-group shiny-input-container' style='width:800px'>",
-                         "<label for='plainFeaturesInput'>Features ([ID]; Name; Sequence; Type; [Max Mismatch])</label>",
+                         "<label for='plainFeaturesInput'>Features ([ID]; Name; Sequence; [Type]; [Max Mismatch])</label>",
                          "<textarea id='plainFeaturesInput' class='form-control' style='height:200px;'",
                          " onkeydown='insertTab(this, event);'>",
                          "1; VKORC1_2-f3; tcaccaagacgctagacc; primer
@@ -36,11 +36,13 @@ shinyUI(fluidPage(
 5; VKORC1_2-f2; ggcctcccaaaatgctagga; primer
 </textarea>",
                          "</div>")),
+             fluidRow(
+             column(2,
              selectInput("plainFeaturesInputSep",
                          "Separator",
-                         c(";" = ";",
-                           "Whitespace" = " ",
-                           "Tab" = "\t")))),
+                         c("Auto" = "auto",
+                           ";" = ";",
+                           "Tab" = "\t")))))),
     tabPanel("GenBank",
              fileInput("gbFile", "Upload GenBank File")
     )
@@ -48,16 +50,15 @@ shinyUI(fluidPage(
   uiOutput("seqNameSelectUI"),
   wellPanel(
   fluidRow(
-    column(4,
+    column(3,
            uiOutput("colorByUI")),
-    column(4,
-           uiOutput("labelByUI"))
-  ),
-  fluidRow(
-    column(4,
+    column(3,
+           uiOutput("labelByUI")),
+    column(3,
            checkboxInput("considerStrand", "Consider Strand", TRUE)),
-    column(4,
-           checkboxInput("showUnmatched", "Show Unmatched", FALSE))),
+    column(3,
+           checkboxInput("showUnmatched", "Show Unmatched", FALSE))
+  ),
   DT::dataTableOutput("featuresTbl")),
   wellPanel(
   fluidRow(

@@ -50,8 +50,8 @@ getGeneiousTypes <- function(featuresTable) {
 cuteSeq <- function(gbSequence,
                     gbFeatures,
                     gbSequenceStart = 1,
-                    colorBy = "type",
-                    labelBy = "label",
+                    colorBy,
+                    labelBy,
                     considerStrand = TRUE,
                     includeLegend = TRUE,
                     linesWidth = 60) {
