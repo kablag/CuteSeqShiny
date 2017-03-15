@@ -1,9 +1,3 @@
-
-# This is the server logic for a Shiny web application.
-# You can find out more about building applications with Shiny here:
-#
-# http://shiny.rstudio.com
-#
 library(shiny)
 library(genbankr)
 library(dplyr)
@@ -66,11 +60,18 @@ shinyServer(function(input, output, session) {
 
   observe({
     req(input$plainFeaturesInput, values$sequence)
-    tblSeparator <- switch(input$plainFeaturesInputSep,
-                           "auto" = ifelse(grepl(";" , input$plainFeaturesInput),
-                                           ";",
-                                           "\t"),
-                           input$plainFeaturesInputSep)
+    getSep <- function(sep) {
+      switch(sep,
+             "auto" = {
+               if (grepl(";" , input$plainFeaturesInput))
+                 return(";")
+               if (grepl("\t" , input$plainFeaturesInput))
+                 return("\t")
+               " "
+             },
+             sep)
+    }
+    tblSeparator <- getSep(input$plainFeaturesInputSep)
     dt <- tryCatch(
       fread(input$plainFeaturesInput,
             sep = tblSeparator,
@@ -119,17 +120,20 @@ shinyServer(function(input, output, session) {
       dt[, strand := rep(c("+","-"), each = nrow(dt) / 2)]
       dt[, ID := .I]
       dt[, seq := clearSeq(seq), by = ID]
-      dt[, c("start", "end") := {
+      dt[, c("start", "end", "mismatchPositions") := {
+        pattern <- switch(strand,
+                          "+" = seq,
+                          "-" = Biostrings::reverseComplement(Biostrings::DNAString(seq)))
         res <-
           Biostrings::matchPattern(
-            switch(strand,
-                   "+" = seq,
-                   "-" = Biostrings::reverseComplement(Biostrings::DNAString(seq))),
+            pattern,
             values$sequence,
-            max.mismatch = maxMismatch)@ranges
-        if (length(res)) list(res[1]@start,
-                              res[1]@start + res[1]@width)
-        else list(-1L, -1L)},
+            max.mismatch = maxMismatch)
+        mismatches <- Biostrings::mismatch(pattern, res)
+        if (length(res)) list(res[1]@ranges@start,
+                              res[1]@ranges@start + res[1]@ranges@width,
+                              mismatches[[1]])
+        else list(-1L, -1L, I(c(0L, 0L)))},
         by = ID]
 
       isolate({
