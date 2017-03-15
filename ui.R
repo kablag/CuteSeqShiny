@@ -1,10 +1,3 @@
-
-# This is the user-interface definition of a Shiny web application.
-# You can find out more about building applications with Shiny here:
-#
-# http://shiny.rstudio.com
-#
-
 library(shiny)
 # library(rhandsontable)
 
@@ -30,8 +23,8 @@ shinyUI(fluidPage(
                            "<textarea id='plainFeaturesInput' class='form-control' style='height:200px;'",
                            " onkeydown='insertTab(this, event);'>",
                            "1; VKORC1_2-f3; tcaccaagacgctagacc; primer
-2; VKORC1_2-m; attggccaggtgcgg; probe
-3; VKORC1_2-wt; ccattggccgggtgc; probe
+2; VKORC1_2-m; attggccaggtgcgg; probe; 1
+3; VKORC1_2-wt; ccattggccgggtgc; probe; 1
 4; VKORC1_2-r2; tctgggaagtcaagcaagaga; primer
 5; VKORC1_2-f2; ggcctcccaaaatgctagga; primer
 </textarea>",
