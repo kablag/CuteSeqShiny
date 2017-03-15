@@ -118,26 +118,76 @@ shinyServer(function(input, output, session) {
       dt <- rbindlist(list(dt, dt),
                       use.names = TRUE, fill = FALSE, idcol = NULL)
       dt[, strand := rep(c("+","-"), each = nrow(dt) / 2)]
-      dt[, ID := .I]
-      dt[, seq := clearSeq(seq), by = ID]
-      dt[, c("start", "end", "mismatchPositions") := {
-        pattern <- switch(strand,
-                          "+" = seq,
-                          "-" = Biostrings::reverseComplement(Biostrings::DNAString(seq)))
+      # dt[, ID := .I]
+      dt[, seq := sapply(seq, function(x) clearSeq(x))]
+      dt2 <- data.table()
+      # dt[, c("start", "end", "mismatchPositions") := {
+      #   pattern <- switch(strand,
+      #                     "+" = seq,
+      #                     "-" = Biostrings::reverseComplement(Biostrings::DNAString(seq)))
+      #   res <-
+      #     Biostrings::matchPattern(
+      #       pattern,
+      #       values$sequence,
+      #       max.mismatch = maxMismatch)
+      #   mismatches <- Biostrings::mismatch(pattern, res)
+      #
+      #   # dt2 <- rbindlist(list(dt2, data.table(1, list(c(1,2)))))
+      #   # print(dt2)
+      #   if (length(res)) list(res[1]@ranges@start,
+      #                         res[1]@ranges@start + res[1]@ranges@width,
+      #                         mismatches[1])
+      #   else list(-1L, -1L, list(c(0L, 0L)))},
+      #   by = ID]
+      for (i in 1:nrow(dt)) {
+        pattern <- switch(dt[i, strand],
+                          "+" = dt[i, seq],
+                          "-" = Biostrings::reverseComplement(Biostrings::DNAString(dt[i, seq])))
         res <-
           Biostrings::matchPattern(
             pattern,
             values$sequence,
-            max.mismatch = maxMismatch)
-        mismatches <- Biostrings::mismatch(pattern, res)
-        if (length(res)) list(res[1]@ranges@start,
-                              res[1]@ranges@start + res[1]@ranges@width,
-                              mismatches[[1]])
-        else list(-1L, -1L, I(c(0L, 0L)))},
-        by = ID]
+            max.mismatch = dt[i, maxMismatch])
 
+        if (length(res)) {
+          mismatches <- Biostrings::mismatch(pattern, res)
+          sname <- {
+            if (length(mismatches) > 1)
+                          function(name, i) sprintf("%s~%i", name, i)
+            else
+              function(name, i) name
+          }
+          for (mmatchIndex in 1:length(mismatches)) {
+            dt2 <- rbindlist(
+              list(dt2,
+                   data.table(seqnames = sname(dt[i, seqnames], mmatchIndex),
+                              seq = dt[i, seq],
+                              type = dt[i, type],
+                              strand = dt[i, strand],
+                              maxMismatch = dt[i, maxMismatch],
+                              start = res[mmatchIndex]@ranges@start,
+                              end = res[mmatchIndex]@ranges@start + res[mmatchIndex]@ranges@width,
+                              mismatches = mismatches[mmatchIndex])))
+            # "seqnames", "seq", "type", "maxMismatch"
+          }
+        }
+        else {
+          dt2 <- rbindlist(
+            list(dt2,
+                 data.table(seqnames = sname(dt[i, seqnames], mmatchIndex),
+                            seq = dt[i, seq],
+                            type = dt[i, type],
+                            strand = dt[i, strand],
+                            maxMismatch = dt[i, maxMismatch],
+                            start = -1L,
+                            end = -1L,
+                            mismatches = list(integer()))))
+
+        }
+      }
+      # print(dt2)
       isolate({
-        values$features <- dt
+        values$features <- dt2
       })
     }
 
@@ -198,6 +248,7 @@ shinyServer(function(input, output, session) {
         cuteSeq(values$sequence, ft,
                 colorBy = input$colorBy,
                 labelBy = input$labelBy,
+                mismatchColor = input$mismatchColor,
                 considerStrand = input$considerStrand,
                 includeLegend = input$includeLegend,
                 linesWidth = input$linesWidth),

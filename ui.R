@@ -68,8 +68,13 @@ shinyUI(fluidPage(
     fluidRow(
       column(2,
              numericInput("linesWidth", "Lines Width", 0, min = 0, step = 1)),
-      column(3,
-             checkboxInput("includeLegend", "Include Legend", TRUE))
+      column(2,
+             checkboxInput("includeLegend", "Include Legend", TRUE)),
+      column(2,
+             colourpicker::colourInput("mismatchColor",
+                                       "Mismatch Color",
+                                       "indianred1",
+                                       palette = "limited"))
     ),
     htmlOutput("cuteSeqHtml"))
 ))

@@ -23,7 +23,7 @@
 #   NULL
 # }
 
-addFlat <- function(flatMap, ID, start, end) {
+addFlat <- function(flatMap, ID, start, end, mismatches = NULL) {
   if ((start < data.table::first(flatMap$seqI) &&
        end < data.table::first(flatMap$seqI)) ||
       (start < data.table::first(flatMap$seqI) &&
@@ -33,7 +33,9 @@ addFlat <- function(flatMap, ID, start, end) {
     start <- data.table::first(flatMap$seqI)
   if (end > data.table::last(flatMap$seqI))
     end <- data.table::last(flatMap$seqI)
-  flatMap[J(start:end), map := ID]
+  flatMap[J(start:(end - 1)), map := ID]
+  if (length(mismatches))
+    flatMap[J(unlist(mismatches) + start - 1), map := -1]
   NULL
 }
 
@@ -48,6 +50,7 @@ cuteSeq <- function(gbSequence,
                     gbSequenceStart = 1,
                     colorBy,
                     labelBy,
+                    mismatchColor = "red",
                     considerStrand = TRUE,
                     includeLegend = TRUE,
                     linesWidth = 60) {
@@ -79,7 +82,7 @@ cuteSeq <- function(gbSequence,
     map = as.numeric(NA)
   )
   setkey(flatMap, seqI)
-  features[, addFlat(flatMap, ID, start, end), by = ID]
+  features[, addFlat(flatMap, ID, start, end, mismatches), by = ID]
   # features[, addFeatureToLayers(allLayers[[strand]], ID, start, end), by = ID]
 
   flatMap[, color := ifelse(is.na(map),
@@ -93,10 +96,15 @@ cuteSeq <- function(gbSequence,
             ifelse(dif,
                    ifelse(map == 0,
                           sprintf("</span>%s", gbSeq),
-                          sprintf("</span><span style='background-color: %s' title='%s'>%s",
-                                  color,
-                                  features[map, get(labelBy)],
-                                  gbSeq)),
+                          ifelse(map == -1,
+                                 sprintf("</span><span style='background-color: %s'>%s",
+                                         mismatchColor,
+                                         gbSeq),
+                                 sprintf("</span><span style='background-color: %s' title='%s'>%s",
+                                         color,
+                                         features[map, get(labelBy)],
+                                         gbSeq))
+                   ),
                    gbSeq),
           by = seqI]
   if (linesWidth != 0) {
