@@ -6,7 +6,7 @@
 #
 
 library(shiny)
-library(rhandsontable)
+# library(rhandsontable)
 
 shinyUI(fluidPage(
   tags$head(includeScript("www/js/allowTab.js")),
@@ -62,9 +62,9 @@ shinyUI(fluidPage(
   DT::dataTableOutput("featuresTbl")),
   wellPanel(
   fluidRow(
-    column(4,
+    column(2,
            numericInput("linesWidth", "Lines Width", 0, min = 0, step = 1)),
-    column(4,
+    column(3,
            checkboxInput("includeLegend", "Include Legend", TRUE))
   ),
   htmlOutput("cuteSeqHtml"))

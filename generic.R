@@ -1,31 +1,27 @@
-library(RColorBrewer)
-library(data.table)
-library(pipeR)
-
-addFeatureToLayers <- function(layers, featureId, from, to, compact = TRUE) {
-  to.layer <- NA
-  if (from < first(layers$seqI))
-    from <- first(layers$seqI)
-  if (to > last(layers$seqI))
-    to <- last(layers$seqI)
-  if (compact) {
-    for (layer.i in 3:ncol(layers)) {
-      if (all(is.na(layers[seqI >= from & seqI <= to][[layer.i]]))) {
-        to.layer <- layer.i - 2
-        break()
-      }
-    }
-  } else {
-    if (all(is.na(layers[seqI >= from & seqI <= to][[ncol(layers)]]))) {
-      to.layer <- ncol(layers) - 2
-    }
-  }
-  if (is.na(to.layer))
-    to.layer <- ncol(layers) - 1
-  layers[seqI >= from & seqI <= to,
-         c(sprintf("layer_%s", to.layer)) := featureId]
-  NULL
-}
+# addFeatureToLayers <- function(layers, featureId, from, to, compact = TRUE) {
+#   to.layer <- NA
+#   if (from < first(layers$seqI))
+#     from <- first(layers$seqI)
+#   if (to > last(layers$seqI))
+#     to <- last(layers$seqI)
+#   if (compact) {
+#     for (layer.i in 3:ncol(layers)) {
+#       if (all(is.na(layers[seqI >= from & seqI <= to][[layer.i]]))) {
+#         to.layer <- layer.i - 2
+#         break()
+#       }
+#     }
+#   } else {
+#     if (all(is.na(layers[seqI >= from & seqI <= to][[ncol(layers)]]))) {
+#       to.layer <- ncol(layers) - 2
+#     }
+#   }
+#   if (is.na(to.layer))
+#     to.layer <- ncol(layers) - 1
+#   layers[seqI >= from & seqI <= to,
+#          c(sprintf("layer_%s", to.layer)) := featureId]
+#   NULL
+# }
 
 addFlat <- function(flatMap, ID, start, end) {
   if ((start < data.table::first(flatMap$seqI) &&
