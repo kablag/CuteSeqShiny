@@ -64,7 +64,14 @@ cuteSeq <- function(gbSequence,
 
   getColors <- function(ncolors) {
     if (ncolors > 12)
-      return(sample(colors(distinct = TRUE), ncolors))
+      return(
+          apply(
+            col2rgb(
+              sample(colors(distinct = TRUE), ncolors)
+              ),
+            2,
+            function(color) rgb(color[1], color[2], color[3], maxColorValue = 255))
+        )
     switch(as.character(ncolors),
            "1" = "#8DD3C7",
            "2" = c("#8DD3C7", "#BEBADA"),
@@ -82,6 +89,8 @@ cuteSeq <- function(gbSequence,
     map = as.numeric(NA)
   )
   setkey(flatMap, seqI)
+  if (is.null(features[["mismatches"]]))
+    features[, mismatches := list(integer())]
   features[, addFlat(flatMap, ID, start, end, mismatches), by = ID]
   # features[, addFeatureToLayers(allLayers[[strand]], ID, start, end), by = ID]
 

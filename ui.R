@@ -5,7 +5,7 @@ shinyUI(fluidPage(
   tags$head(includeScript("www/js/allowTab.js")),
 
   titlePanel("CuteSeq"),
-  tabsetPanel(
+  tabsetPanel(id = "inputTypeTabs",
     tabPanel("Plain",
              # textAreaInput("plainSequenceInput",
              #               "Sequence",

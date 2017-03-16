@@ -17,7 +17,16 @@ shinyServer(function(input, output, session) {
     stopApp()
   })
 
-  values <- reactiveValues()
+  values <- reactiveValues(
+    features = list(
+      GenBank = NULL,
+      Plain = NULL
+    ),
+    sequence = list(
+      GenBank = NULL,
+      Plain = NULL
+    )
+  )
 
   gbFile <- reactive({
     req(input$gbFile)
@@ -34,12 +43,12 @@ shinyServer(function(input, output, session) {
   observe({
     req(input$seqNameSelect)
     isolate({
-      values$features <- gbFile()@other_features %>>%
+      values$features[["GenBank"]] <- gbFile()@other_features %>>%
         as.data.frame() %>>%
         filter(seqnames == input$seqNameSelect) %>>%
         as.data.table() %>>%
         getGeneiousTypes()
-      values$sequence <- gbFile()@sequence[[input$seqNameSelect]]
+      values$sequence[["GenBank"]] <- gbFile()@sequence[[input$seqNameSelect]]
     })
     # ,
     #          (start < first(flatMap$seqI) &&
@@ -51,10 +60,10 @@ shinyServer(function(input, output, session) {
   observe({
     req(input$plainSequenceInput)
     isolate({
-      dnaseq <<- input$plainSequenceInput %>>%
+      dnaseq <- input$plainSequenceInput %>>%
         clearSeq() %>>%
         Biostrings::DNAString()
-      values$sequence <- dnaseq
+      values$sequence[["Plain"]] <- dnaseq
     })
   })
 
@@ -146,8 +155,9 @@ shinyServer(function(input, output, session) {
         res <-
           Biostrings::matchPattern(
             pattern,
-            values$sequence,
+            values$sequence[["Plain"]],
             max.mismatch = dt[i, maxMismatch],
+            with.indels = input$allowInDels,
             fixed = FALSE)
 
         if (length(res)) {
@@ -175,7 +185,7 @@ shinyServer(function(input, output, session) {
         else {
           dt2 <- rbindlist(
             list(dt2,
-                 data.table(seqnames = sname(dt[i, seqnames], mmatchIndex),
+                 data.table(seqnames = dt[i, seqnames],
                             seq = dt[i, seq],
                             type = dt[i, type],
                             strand = dt[i, strand],
@@ -188,45 +198,56 @@ shinyServer(function(input, output, session) {
       }
       # print(dt2)
       isolate({
-        values$features <- dt2
+        values$features[["Plain"]] <- dt2
       })
     }
+  })
 
+  observe({
+    req(input$inputTypeTabs)
+    values$workingFeatures <- values$features[[input$inputTypeTabs]]
+    values$workingSequence <- values$sequence[[input$inputTypeTabs]]
   })
 
   output$colorByUI <- renderUI({
-    req(values$features)
+    req(values$workingFeatures)
     selectInput("colorBy",
                 "Color by",
-                colnames(values$features),
-                if ("type" %in% colnames(values$features))
+                colnames(values$workingFeatures),
+                if ("type" %in% colnames(values$workingFeatures))
                   "type")
   })
 
   output$labelByUI <- renderUI({
-    req(values$features)
+    req(values$workingFeatures)
     selectInput("labelBy",
                 "Label by",
-                colnames(values$features),
-                if ("label" %in% colnames(values$features))
+                colnames(values$workingFeatures),
+                if ("label" %in% colnames(values$workingFeatures))
                   "label")
   })
   output$limitSeqSliderUI <- renderUI({
-    req(values$sequence)
+    req(values$workingSequence)
     sliderInput("limitSeqSlider",
                 "Limit Sequence",
-                min = 1 + values$sequence@offset,
-                max = values$sequence@length + values$sequence@offset,
-                value = c(1 + values$sequence@offset,
-                          values$sequence@length + values$sequence@offset),
+                min = 1 + values$workingSequence@offset,
+                max = values$workingSequence@length + values$workingSequence@offset,
+                value = c(1 + values$workingSequence@offset,
+                          values$workingSequence@length + values$workingSequence@offset),
                 step = 1)
   })
 
   output$featuresTbl <- DT::renderDataTable({
-    req(values$features)
-    dt <- {if (input$showUnmatched)
-      values$features
-      else values$features[start != -1]}
+    req(values$workingFeatures)
+    dt <- {
+      if (input$inputTypeTabs == "GenBank") {
+        values$workingFeatures
+      } else {
+        if (input$showUnmatched)
+          values$workingFeatures
+        else values$workingFeatures[start != -1]
+      }
+    }
     DT::datatable(dt,
                   selection = "multiple"
     )
@@ -235,26 +256,36 @@ shinyServer(function(input, output, session) {
   output$cuteSeqHtml <- renderUI({
     # input$processCuteSeq
     # isolate({
-    req(values$sequence, values$features, input$colorBy, input$labelBy)
-
-    ft <- values$features[start != -1]
+    req(input$colorBy,
+        input$labelBy,
+        values$workingFeatures,
+        values$workingSequence,
+        values$workingFeatures[[input$colorBy]],
+        values$workingFeatures[[input$labelBy]])
+    ft <- {
+      if (input$inputTypeTabs == "GenBank") {
+        values$workingFeatures
+      } else {
+        values$workingFeatures[start != -1]
+      }
+    }
     if (!nrow(ft))
       return(NULL)
     if (length(input$featuresTbl_rows_selected)) {
       ft <- ft[input$featuresTbl_rows_selected, ]
     }
-    vss <<- values$sequence
-    ftt <<- ft
     HTML(
       paste0(
         "<div style='font-family:monospace;overflow:hidden;width:800px;word-break:break-all;white-space:normal;'>",
-        cuteSeq(values$sequence, ft,
-                colorBy = input$colorBy,
-                labelBy = input$labelBy,
-                mismatchColor = input$mismatchColor,
-                considerStrand = input$considerStrand,
-                includeLegend = input$includeLegend,
-                linesWidth = input$linesWidth),
+        cuteSeq(
+          values$workingSequence,
+          ft,
+          colorBy = input$colorBy,
+          labelBy = input$labelBy,
+          mismatchColor = input$mismatchColor,
+          considerStrand = input$considerStrand,
+          includeLegend = input$includeLegend,
+          linesWidth = input$linesWidth),
         "</div>"
       ))
     # })
