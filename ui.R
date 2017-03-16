@@ -3,7 +3,6 @@ library(shiny)
 
 shinyUI(fluidPage(
   tags$head(includeScript("www/js/allowTab.js")),
-
   titlePanel("CuteSeq"),
   tabsetPanel(id = "inputTypeTabs",
     tabPanel("Plain",
@@ -11,6 +10,7 @@ shinyUI(fluidPage(
              #               "Sequence",
              #               "TAAGAGGTCCTTCACCAGCCTCCTCTCCCGGCATTATCCCATCTACCCCTCCACATTCAAGTTTTTGGAAAGATTCTACACTCCCAGTCTCTACTTCCTCACTTCTTCCTTGCTGCCCACGCCATAAACTAGCTGCTGCCTCCAGCATTGCCCTGACACCTAGTGGCTGGTGTCACCAAGACGCTAGACCCAATGGTTATTTATTTATTTATTTACTTATTTTGAGACGGAGTCTCACTCTGTCGCCCAGGCTGGAGTGCAGCGGTGCCATCTCGGCTCACTGCAACTTCCGCCTCCAGGGTTCAAGTGGTTCTCGTGCCTCAGCCTCCCAAGTAGTTTGGACTACAGGTGCCTGCCACCATGTCTGGCTAATTTTTGTATTTTTAGTAGAGACAGGGTTTCACCATGTTGGCCAGGCTTGTCTTAAACTCCTGACCTCAAGTGATCCACCCACCTCGGCCTCCCAAAATGCTAGGATTATAGGCGTGAGCCACCGCACCNGGCCAATGGTTGTTTTTCAGGTCTTCTCTTGCTTGACTTCCCAGAGGGATCCCTTACTGTTGCACCTACCCTTCTGGGAACTCTCTTCCTCTGGCGTCTGTGATATTTCCCTCTCCTGCTGGCTCCTCCCTCTCCAGATGCTGTTTCTCACATCTACTCTCTTCTAGAGAGTGTGGTAGACAGAATAATGGTCACCAAAGATGTCCCTGCATGAATCCCTGGAACTTGTGAATATGATAGGTTAAATGGCCAAAAGGGAATTAAGGTTGCAGATGGAATTAAGCTGACCAATCTCCTGATTTTATTTTATTTTATTTTGTTTTTGAGGTGGAGTTTCGCTCTTGTTGCCCAACTGGAGTGCAATGGTGTGATCTCGGCTCACTGCAACCTCCGCCTGCCAGGTTCGAGAGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCACCCGCCATCATGCCTGGCTAATTTTTTAAATTTTTAGTAGAGACAGGG"),
              wellPanel(
+               tags$h3("Input"),
                HTML(paste0("<div class='form-group shiny-input-container' >",
                            "<label for='plainSequenceInput'>Sequence</label>",
                            "<textarea id='plainSequenceInput' class='form-control' style='width:800px;height:220px;''>",
@@ -23,8 +23,8 @@ shinyUI(fluidPage(
                            "<textarea id='plainFeaturesInput' class='form-control' style='height:200px;'",
                            " onkeydown='insertTab(this, event);'>",
                            "1; ABO-f; TACCAACTACAAAAATGGAA; primer
-2; ABO-wt; TCCCACGTTTCGGTTTC; probe
-3; ABO-m; TTTCTGTTTCAAGAAGCTATT; probe
+2; ABO-wt; (FAM)-TCCCACGTTTCGGTTTC-(BHQ1); probe_wt
+3; ABO-m; (hex)-tttctgtttcaagaagc(t-lna)att-(bhq1); probe_m
 4; ABO-r; AGTCCTGTGACCACGGAG; primer
 5; ABO-r2; TGCTTGTGTGTGTTTACCGCCA; primer-r2; 1
 </textarea>",
@@ -50,11 +50,15 @@ shinyUI(fluidPage(
                )
              )),
     tabPanel("GenBank",
-             fileInput("gbFile", "Upload GenBank File")
+             wellPanel(
+               tags$h3("Input"),
+               fileInput("gbFile", "Upload GenBank File")
+             )
     )
   ),
   uiOutput("seqNameSelectUI"),
   wellPanel(
+    tags$h3("Features"),
     fluidRow(
       column(3,
              uiOutput("colorByUI")),
@@ -67,6 +71,7 @@ shinyUI(fluidPage(
     ),
     DT::dataTableOutput("featuresTbl")),
   wellPanel(
+    tags$h3("Result"),
     fluidRow(
       column(2,
              numericInput("linesWidth", "Lines Width", 0, min = 0, step = 1)),

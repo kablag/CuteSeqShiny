@@ -8,10 +8,6 @@ library(RColorBrewer)
 
 source("generic.R")
 
-clearSeq <- function(dnaseq) {
-  gsub("[^ACGTMRWSYKVHDBN]", "", dnaseq, ignore.case = TRUE)
-}
-
 shinyServer(function(input, output, session) {
   session$onSessionEnded(function() {
     stopApp()

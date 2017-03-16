@@ -22,6 +22,14 @@
 #          c(sprintf("layer_%s", to.layer)) := featureId]
 #   NULL
 # }
+library(stringr)
+
+clearSeq <- function(dnaseq) {
+  dnaseq <- str_replace_all(dnaseq, "\\(([a-zA-Z])-[^\\)]*\\)", "\\1")
+  dnaseq <- str_replace_all(dnaseq, "-?\\([^\\)]*\\)-?", "")
+  gsub("[^ACGTMRWSYKVHDBN]", "", dnaseq, ignore.case = TRUE)
+}
+
 
 addFlat <- function(flatMap, ID, start, end, mismatches = NULL) {
   if ((start < data.table::first(flatMap$seqI) &&
