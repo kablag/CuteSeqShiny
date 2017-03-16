@@ -147,7 +147,8 @@ shinyServer(function(input, output, session) {
           Biostrings::matchPattern(
             pattern,
             values$sequence,
-            max.mismatch = dt[i, maxMismatch])
+            max.mismatch = dt[i, maxMismatch],
+            fixed = FALSE)
 
         if (length(res)) {
           mismatches <- Biostrings::mismatch(pattern, res)
@@ -242,6 +243,8 @@ shinyServer(function(input, output, session) {
     if (length(input$featuresTbl_rows_selected)) {
       ft <- ft[input$featuresTbl_rows_selected, ]
     }
+    vss <<- values$sequence
+    ftt <<- ft
     HTML(
       paste0(
         "<div style='font-family:monospace;overflow:hidden;width:800px;word-break:break-all;white-space:normal;'>",

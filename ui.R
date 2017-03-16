@@ -14,7 +14,7 @@ shinyUI(fluidPage(
                HTML(paste0("<div class='form-group shiny-input-container' >",
                            "<label for='plainSequenceInput'>Sequence</label>",
                            "<textarea id='plainSequenceInput' class='form-control' style='width:800px;height:220px;''>",
-                           "TAAGAGGTCCTTCACCAGCCTCCTCTCCCGGCATTATCCCATCTACCCCTCCACATTCAAGTTTTTGGAAAGATTCTACACTCCCAGTCTCTACTTCCTCACTTCTTCCTTGCTGCCCACGCCATAAACTAGCTGCTGCCTCCAGCATTGCCCTGACACCTAGTGGCTGGTGTCACCAAGACGCTAGACCCAATGGTTATTTATTTATTTATTTACTTATTTTGAGACGGAGTCTCACTCTGTCGCCCAGGCTGGAGTGCAGCGGTGCCATCTCGGCTCACTGCAACTTCCGCCTCCAGGGTTCAAGTGGTTCTCGTGCCTCAGCCTCCCAAGTAGTTTGGACTACAGGTGCCTGCCACCATGTCTGGCTAATTTTTGTATTTTTAGTAGAGACAGGGTTTCACCATGTTGGCCAGGCTTGTCTTAAACTCCTGACCTCAAGTGATCCACCCACCTCGGCCTCCCAAAATGCTAGGATTATAGGCGTGAGCCACCGCACCNGGCCAATGGTTGTTTTTCAGGTCTTCTCTTGCTTGACTTCCCAGAGGGATCCCTTACTGTTGCACCTACCCTTCTGGGAACTCTCTTCCTCTGGCGTCTGTGATATTTCCCTCTCCTGCTGGCTCCTCCCTCTCCAGATGCTGTTTCTCACATCTACTCTCTTCTAGAGAGTGTGGTAGACAGAATAATGGTCACCAAAGATGTCCCTGCATGAATCCCTGGAACTTGTGAATATGATAGGTTAAATGGCCAAAAGGGAATTAAGGTTGCAGATGGAATTAAGCTGACCAATCTCCTGATTTTATTTTATTTTATTTTGTTTTTGAGGTGGAGTTTCGCTCTTGTTGCCCAACTGGAGTGCAATGGTGTGATCTCGGCTCACTGCAACCTCCGCCTGCCAGGTTCGAGAGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCACCCGCCATCATGCCTGGCTAATTTTTTAAATTTTTAGTAGAGACAGGG",
+                           "ATTTTTGCCACATTGAAGGAAAATTATTTCCACCAAGATTTCCCTACAGCCAAACGATCTACCAACTACAAAAATGGAAAAAATAATTTAGGACATGTAAAGTTCAAATGTTTTGCCTCCCACGTTTCNGTTTCAAGAAGCTATTCGAGATAAATCGCTCCGTGGTCACAGGACTTAGAAAGGTGGAGGTAAACACACACAAGCATTATAAGATAAGAAGTAACAGATGAATTAGTTGAAAGGGACTGATTTCGGGGGAA",
                            "</textarea>",
                            "</div>")),
                # uiOutput("limitSeqSliderUI"),
@@ -22,11 +22,11 @@ shinyUI(fluidPage(
                            "<label for='plainFeaturesInput'>Features ([ID]; Name; Sequence; [Type]; [Max Mismatch])</label>",
                            "<textarea id='plainFeaturesInput' class='form-control' style='height:200px;'",
                            " onkeydown='insertTab(this, event);'>",
-                           "1; VKORC1_2-f3; tcaccaagacgctagacc; primer
-2; VKORC1_2-m; attggccaggtgcgg; probe; 1
-3; VKORC1_2-wt; ccattggccgggtgc; probe; 1
-4; VKORC1_2-r2; tctgggaagtcaagcaagaga; primer
-5; VKORC1_2-f2; ggcctcccaaaatgctagga; primer
+                           "1; ABO-f; TACCAACTACAAAAATGGAA; primer
+2; ABO-wt; TCCCACGTTTCGGTTTC; probe
+3; ABO-m; TTTCTGTTTCAAGAAGCTATT; probe
+4; ABO-r; AGTCCTGTGACCACGGAG; primer
+5; ABO-r2; TGCTTGTGTGTGTTTACCGCCA; primer-r2; 1
 </textarea>",
                            "</div>")),
                fluidRow(
@@ -37,6 +37,15 @@ shinyUI(fluidPage(
                                       ";" = ";",
                                       "Tab" = "\t",
                                       "Space" = " "))
+                 ),
+                 column(3,
+                        checkboxInput("allowInDels",
+                                      HTML(
+                                        paste(
+                                          "Allow Insertions/Deletions",
+                                          "(max number of indels = Max Mismatch option)",
+                                          sep = "<br>")),
+                                      FALSE)
                  )
                )
              )),
@@ -66,7 +75,7 @@ shinyUI(fluidPage(
       column(2,
              colourpicker::colourInput("mismatchColor",
                                        "Mismatch Color",
-                                       "indianred1",
+                                       "chartreuse",
                                        palette = "limited"))
     ),
     htmlOutput("cuteSeqHtml"))
