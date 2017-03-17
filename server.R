@@ -53,6 +53,24 @@ shinyServer(function(input, output, session) {
     #               end < first(flatMap$seqI)))
   })
 
+  observeEvent(input$plainInputExample, {
+    updateTextAreaInput(
+      session, "plainSequenceInput",
+      value = paste0("ATTTTTGCCACATTGAAGGAAAATTATTTCCACCAAGATTTCCCT",
+                     "ACAGCCAAACGATCTACCAACTACAAAAATGGAAAAAATAATTTAGGACATGTA",
+                     "AAGTTCAAATGTTTTGCCTCCCACGTTTCNGTTTCAAGAAGCTATTCGAGATAA",
+                     "ATCGCTCCGTGGTCACAGGACTTAGAAAGGTGGAGGTAAACACACACAAGCATT",
+                     "ATAAGATAAGAAGTAACAGATGAATTAGTTGAAAGGGACTGATTTCGGGGGAA"))
+    updateTextAreaInput(
+      session, "plainFeaturesInput",
+      value = paste0(
+        "1; ABO-f; TACCAACTACAAAAATGGAA; primer\n",
+        "2; ABO-wt; (FAM)-TCCCACGTTTCGGTTTC-(BHQ1); probe_wt\n",
+        "3; ABO-m; (hex)-tttctgtttcaagaagc(t-lna)att-(bhq1); probe_m\n",
+        "4; ABO-r; AGTCCTGTGACCACGGAG; primer\n",
+        "5; ABO-r2; TGCTTGTGTGTGTTTACCGCCA; primer-r2; 1"))
+  })
+
   observe({
     req(input$plainSequenceInput)
     isolate({
@@ -160,7 +178,7 @@ shinyServer(function(input, output, session) {
           mismatches <- Biostrings::mismatch(pattern, res)
           sname <- {
             if (length(mismatches) > 1)
-                          function(name, i) sprintf("%s~%i", name, i)
+              function(name, i) sprintf("%s~%i", name, i)
             else
               function(name, i) name
           }
@@ -249,15 +267,29 @@ shinyServer(function(input, output, session) {
     )
   })
 
+  seqPalette <- reactive({
+    req(values$workingFeatures,
+        values$workingFeatures[[input$colorBy]])
+    genSeqPalette(
+      {
+        if (input$inputTypeTabs == "GenBank") {
+          values$workingFeatures
+        } else {
+          values$workingFeatures[start != -1]
+        }
+      },
+      input$colorBy,
+      input$considerStrand)
+  })
+
   output$cuteSeqHtml <- renderUI({
     # input$processCuteSeq
     # isolate({
-    req(input$colorBy,
-        input$labelBy,
-        values$workingFeatures,
+    req(input$labelBy,
         values$workingSequence,
-        values$workingFeatures[[input$colorBy]],
+        seqPalette(),
         values$workingFeatures[[input$labelBy]])
+    # cat("Redraw\n")
     ft <- {
       if (input$inputTypeTabs == "GenBank") {
         values$workingFeatures
@@ -278,6 +310,7 @@ shinyServer(function(input, output, session) {
           ft,
           colorBy = input$colorBy,
           labelBy = input$labelBy,
+          seqPalette = seqPalette(),
           mismatchColor = input$mismatchColor,
           considerStrand = input$considerStrand,
           includeLegend = input$includeLegend,

@@ -30,6 +30,21 @@ clearSeq <- function(dnaseq) {
   gsub("[^ACGTMRWSYKVHDBN]", "", dnaseq, ignore.case = TRUE)
 }
 
+getColors <- function(ncolors) {
+  if (ncolors > 12)
+    return(
+      apply(
+        col2rgb(
+          sample(colors(distinct = TRUE), ncolors)
+        ),
+        2,
+        function(color) rgb(color[1], color[2], color[3], maxColorValue = 255))
+    )
+  switch(as.character(ncolors),
+         "1" = "#8DD3C7",
+         "2" = c("#8DD3C7", "#BEBADA"),
+         brewer.pal(ncolors, "Set3"))
+}
 
 addFlat <- function(flatMap, ID, start, end, mismatches = NULL) {
   if ((start < data.table::first(flatMap$seqI) &&
@@ -52,12 +67,26 @@ getGeneiousTypes <- function(featuresTable) {
                 type := sub("Geneious type: (.*)", "\\1", note)]
 }
 
+genSeqPalette <- function(gbFeatures, colorBy, considerStrand) {
+  tryCatch({
+    if (considerStrand) {
+      gbFeatures[, c(colorBy) := paste(get(colorBy), strand)]
+    }
+    uniqueColorByParams <- unique(gbFeatures[, get(colorBy)])
+    data.table(param = uniqueColorByParams,
+               color = getColors(length(uniqueColorByParams))) %>>%
+      setkey(param)
+  },
+  error = function(e) { NULL }
+  )
+}
 
 cuteSeq <- function(gbSequence,
                     gbFeatures,
                     gbSequenceStart = 1,
                     colorBy,
                     labelBy,
+                    seqPalette,
                     mismatchColor = "red",
                     considerStrand = TRUE,
                     includeLegend = TRUE,
@@ -68,28 +97,6 @@ cuteSeq <- function(gbSequence,
   if (considerStrand) {
     features[, c(colorBy) := paste(get(colorBy), strand)]
   }
-  uniqueColorByParams <- unique(features[, get(colorBy)])
-
-  getColors <- function(ncolors) {
-    if (ncolors > 12)
-      return(
-          apply(
-            col2rgb(
-              sample(colors(distinct = TRUE), ncolors)
-              ),
-            2,
-            function(color) rgb(color[1], color[2], color[3], maxColorValue = 255))
-        )
-    switch(as.character(ncolors),
-           "1" = "#8DD3C7",
-           "2" = c("#8DD3C7", "#BEBADA"),
-           brewer.pal(ncolors, "Set3"))
-  }
-
-  colorMap <-
-    data.table(gbtype = uniqueColorByParams,
-               color = getColors(length(uniqueColorByParams)))
-  setkey(colorMap, gbtype)
   flatMap <- data.table(
     seqI = (gbSequenceStart + gbSequence@offset):
       (gbSequence@length + gbSequence@offset),
@@ -104,7 +111,7 @@ cuteSeq <- function(gbSequence,
 
   flatMap[, color := ifelse(is.na(map),
                             "",
-                            colorMap[features[map, get(colorBy)], color]),
+                            seqPalette[features[map, get(colorBy)], color]),
           by = seqI]
   flatMap[is.na(map), map := 0]
   flatMap[, dif := map != data.table::shift(map, fill = FALSE)]
@@ -131,10 +138,10 @@ cuteSeq <- function(gbSequence,
   legendTbl <- ""
   if (includeLegend) {
     legendTbl <-
-      colorMap[,
-               toprint := paste0(sprintf("<span style='background-color: %s'>%s</span>: ", color, gbtype),
-                                 paste(features[get(colorBy) == gbtype, get(labelBy)], collapse = ", ")),
-               by = gbtype][, toprint] %>>%
+      seqPalette[,
+                 toprint := paste0(sprintf("<span style='background-color: %s'>%s</span>: ", color, param),
+                                   paste(features[get(colorBy) == param, get(labelBy)], collapse = ", ")),
+                 by = param][, toprint] %>>%
       paste0(collapse = "<br>")
   }
   paste0(paste0(c(flatMap$coloredSeq, "</span>"), collapse = ""),
