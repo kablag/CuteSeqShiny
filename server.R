@@ -304,7 +304,7 @@ shinyServer(function(input, output, session) {
     }
     HTML(
       paste0(
-        "<div style='font-family:monospace;overflow:hidden;width:800px;word-break:break-all;white-space:normal;'>",
+        "<div style='font-family:monospace;overflow:hidden;word-break:break-all;white-space:normal;'>",
         cuteSeq(
           values$workingSequence,
           ft,
