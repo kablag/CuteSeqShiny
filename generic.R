@@ -41,6 +41,7 @@ getColors <- function(ncolors) {
         function(color) rgb(color[1], color[2], color[3], maxColorValue = 255))
     )
   switch(as.character(ncolors),
+         "0" = "",
          "1" = "#8DD3C7",
          "2" = c("#8DD3C7", "#BEBADA"),
          brewer.pal(ncolors, "Set3"))
@@ -56,9 +57,12 @@ addFlat <- function(flatMap, ID, start, end, mismatches = NULL) {
     start <- data.table::first(flatMap$seqI)
   if (end > data.table::last(flatMap$seqI))
     end <- data.table::last(flatMap$seqI)
+  subMap <- flatMap[J(start:(end - 1))]
+  hasMapI <- subMap[!is.na(map), seqI]
+  flatMap[J(hasMapI), intersectionHere := TRUE]
   flatMap[J(start:(end - 1)), map := ID]
   if (length(mismatches))
-    flatMap[J(unlist(mismatches) + start - 1), map := -1]
+    flatMap[J(unlist(mismatches) + start - 1), mismatchHere := TRUE]
   NULL
 }
 
@@ -90,7 +94,8 @@ cuteSeq <- function(gbSequence,
                     mismatchColor = "red",
                     considerStrand = TRUE,
                     includeLegend = TRUE,
-                    linesWidth = 60) {
+                    linesWidth = 60,
+                    spacingEveryNth = 10) {
   # gbS <<- gbSequence
   features <- as.data.table(
     gbFeatures)[, ID := .I]
@@ -101,8 +106,13 @@ cuteSeq <- function(gbSequence,
     seqI = (gbSequenceStart + gbSequence@offset):
       (gbSequence@length + gbSequence@offset),
     gbSeq = strsplit(as.character(gbSequence), NULL)[[1]],
-    map = as.numeric(NA)
+    map = as.numeric(NA),
+    intersectionHere = FALSE,
+    mismatchHere = FALSE
   )
+  if (spacingEveryNth)
+    flatMap[seq(spacingEveryNth, nrow(flatMap), spacingEveryNth),
+            gbSeq := sprintf("<span style='letter-spacing:0.5em;'>%s</span>", gbSeq)]
   setkey(flatMap, seqI)
   if (is.null(features[["mismatches"]]))
     features[, mismatches := list(integer())]
@@ -114,20 +124,30 @@ cuteSeq <- function(gbSequence,
                             seqPalette[features[map, get(colorBy)], color]),
           by = seqI]
   flatMap[is.na(map), map := 0]
-  flatMap[, dif := map != data.table::shift(map, fill = FALSE)]
+  flatMap[, dif := {
+    map != data.table::shift(map, fill = FALSE) |
+      intersectionHere != data.table::shift(intersectionHere, fill = FALSE) |
+      mismatchHere != data.table::shift(mismatchHere, fill = FALSE)
+  }]
   flatMap[,
           coloredSeq :=
             ifelse(dif,
                    ifelse(map == 0,
                           sprintf("</span>%s", gbSeq),
-                          ifelse(map == -1,
-                                 sprintf("</span><span style='background-color: %s'>%s",
+                          # ifelse(map == -1,
+                          #        sprintf("</span><span style='background-color: %s'>%s",
+                          #                mismatchColor,
+                          #                gbSeq),
+                          sprintf("</span><span style='background-color: %s;%s' title='%s'>%s",
+                                  ifelse(mismatchHere,
                                          mismatchColor,
-                                         gbSeq),
-                                 sprintf("</span><span style='background-color: %s' title='%s'>%s",
-                                         color,
-                                         features[map, get(labelBy)],
-                                         gbSeq))
+                                         color),
+                                  ifelse(intersectionHere,
+                                         "text-decoration:underline;",
+                                         ""),
+                                  features[map, get(labelBy)],
+                                  gbSeq)
+                          #)
                    ),
                    gbSeq),
           by = seqI]
@@ -138,14 +158,37 @@ cuteSeq <- function(gbSequence,
   legendTbl <- ""
   if (includeLegend) {
     legendTbl <-
-      seqPalette[,
-                 toprint := paste0(sprintf("<span style='background-color: %s'>%s</span>: ", color, param),
-                                   paste(features[get(colorBy) == param, get(labelBy)], collapse = ", ")),
-                 by = param][, toprint] %>>%
-      paste0(collapse = "<br>")
+      sprintf("%s<br>%s%s",
+              # seqPalette[,
+              #            toprint :=
+              #              paste0(sprintf("<span style='background-color: %s'>&emsp;&emsp;</span> <b>%s</b> ",
+              #                             color, param),
+              #                     paste(features[get(colorBy) == param, get(labelBy)], collapse = ",&ensp;")),
+              #            by = param][, toprint] %>>%
+              # paste0(collapse = "<br>")
+                htmlTable::htmlTable(seqPalette[
+                  , Color := sprintf("<span style='background-color: %s'>ATGC</span>",
+                                    color)]
+                  [, Features := paste(features[get(colorBy) == param, get(labelBy)], collapse = ", "),
+                    by = param]
+                  # [,c("param", "strand") = list(str_match(param, "(.*) ?([+-])$?"))]
+                  [, .(Color, param, Features)],
+                  rnames = FALSE, header = c("Color", "Color Group Name", "Features"),
+                  align = paste(rep('l', 3), collapse = ''))
+              ,
+              ifelse(any(flatMap[, mismatchHere] == TRUE),
+                     sprintf("<br><span style='background-color: %s'>&emsp;&emsp;</span>&emsp;<b>Mismatch</b>",
+                             mismatchColor),
+                     ""),
+              ifelse(any(flatMap[, intersectionHere] == TRUE),
+                     "<br><span style='text-decoration:underline;'>&emsp;&emsp;</span>&emsp;<b>Intersection</b>",
+                     ""))
   }
-  paste0(paste0(c(flatMap$coloredSeq, "</span>"), collapse = ""),
-         "<br><br>",
-         legendTbl)
+  paste0(
+    "<p>",
+    paste0(c(flatMap$coloredSeq, "</span>"), collapse = ""),
+    "<br><br>",
+    legendTbl,
+    "</p>")
 }
 

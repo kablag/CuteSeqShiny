@@ -314,7 +314,8 @@ shinyServer(function(input, output, session) {
           mismatchColor = input$mismatchColor,
           considerStrand = input$considerStrand,
           includeLegend = input$includeLegend,
-          linesWidth = input$linesWidth),
+          linesWidth = input$linesWidth,
+          spacingEveryNth = as.integer(input$spacingEveryNth)),
         "</div>"
       ))
     # })
