@@ -75,7 +75,7 @@ shinyUI(fluidPage(
              checkboxInput("showUnmatched", "Show Unmatched", FALSE))
     ),
     DT::dataTableOutput("featuresTbl")),
-  wellPanel(
+
     tags$h3("Result"),
     # fluidRow(
     #   column(2,
@@ -96,7 +96,7 @@ shinyUI(fluidPage(
     #                                    palette = "limited"))
     # ),
     fluidRow(
-      column(2,
+      column(2, wellPanel(
 
                       numericInput("linesWidth", "Lines Width", 0, min = 0, step = 1),
 
@@ -113,8 +113,8 @@ shinyUI(fluidPage(
                                                 "Mismatch Color",
                                                 "chartreuse",
                                                 palette = "limited")
-             ),
+             )),
       column(6,
-    htmlOutput("cuteSeqHtml")))
+    htmlOutput("cuteSeqHtml"))
   )
 ))

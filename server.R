@@ -282,12 +282,11 @@ shinyServer(function(input, output, session) {
       input$considerStrand)
   })
 
-  output$cuteSeqHtml <- renderUI({
+  flatMap <- reactive({
     # input$processCuteSeq
     # isolate({
     req(input$labelBy,
         values$workingSequence,
-        seqPalette(),
         values$workingFeatures[[input$labelBy]])
     # cat("Redraw\n")
     ft <- {
@@ -302,17 +301,31 @@ shinyServer(function(input, output, session) {
     if (length(input$featuresTbl_rows_selected)) {
       ft <- ft[input$featuresTbl_rows_selected, ]
     }
-    HTML(
-      paste0(
-        "<div style='font-family:monospace;overflow:hidden;word-break:break-all;white-space:normal;'>",
-        cuteSeq(
+
+        genFlatMap(
           values$workingSequence,
           ft,
+          gbSequenceStart = 1,
           colorBy = input$colorBy,
           labelBy = input$labelBy,
+          considerStrand = input$considerStrand
+        )
+  })
+
+  output$cuteSeqHtml <- renderUI({
+    # input$processCuteSeq
+    # isolate({
+    req(flatMap(), seqPalette())
+    # cat("Redraw\n")
+
+    HTML(
+      paste0(
+        "<div style='font-family:monospace;overflow:hidden;",
+        "word-break:break-all;white-space:normal;'>",
+        cuteSeq(
+          flatMap = flatMap(),
           seqPalette = seqPalette(),
           mismatchColor = input$mismatchColor,
-          considerStrand = input$considerStrand,
           includeLegend = input$includeLegend,
           linesWidth = input$linesWidth,
           spacingEveryNth = as.integer(input$spacingEveryNth)),

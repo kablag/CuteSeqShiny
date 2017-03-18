@@ -85,18 +85,12 @@ genSeqPalette <- function(gbFeatures, colorBy, considerStrand) {
   )
 }
 
-cuteSeq <- function(gbSequence,
-                    gbFeatures,
-                    gbSequenceStart = 1,
-                    colorBy,
-                    labelBy,
-                    seqPalette,
-                    mismatchColor = "red",
-                    considerStrand = TRUE,
-                    includeLegend = TRUE,
-                    linesWidth = 60,
-                    spacingEveryNth = 10) {
-  # gbS <<- gbSequence
+genFlatMap <- function(gbSequence,
+                       gbFeatures,
+                       gbSequenceStart = 1,
+                       colorBy,
+                       labelBy,
+                       considerStrand = TRUE) {
   features <- as.data.table(
     gbFeatures)[, ID := .I]
   if (considerStrand) {
@@ -106,29 +100,48 @@ cuteSeq <- function(gbSequence,
     seqI = (gbSequenceStart + gbSequence@offset):
       (gbSequence@length + gbSequence@offset),
     gbSeq = strsplit(as.character(gbSequence), NULL)[[1]],
-    map = as.numeric(NA),
+    map = as.integer(NA),
     intersectionHere = FALSE,
     mismatchHere = FALSE
   )
-  if (spacingEveryNth)
-    flatMap[seq(spacingEveryNth, nrow(flatMap), spacingEveryNth),
-            gbSeq := sprintf("<span style='letter-spacing:0.5em;'>%s</span>", gbSeq)]
+
   setkey(flatMap, seqI)
   if (is.null(features[["mismatches"]]))
     features[, mismatches := list(integer())]
   features[, addFlat(flatMap, ID, start, end, mismatches), by = ID]
   # features[, addFeatureToLayers(allLayers[[strand]], ID, start, end), by = ID]
 
-  flatMap[, color := ifelse(is.na(map),
-                            "",
-                            seqPalette[features[map, get(colorBy)], color]),
-          by = seqI]
+  # flatMap[!is.na(map),
+  #         # color := ifelse(is.na(map),
+  #         #                   "",
+  #                           seqPalette[map, color],
+  #         # ),
+  #         by = seqI]
+  flatMap[!is.na(map), label := features[map, get(labelBy)]]
+  flatMap[!is.na(map), typeID := features[map, get(colorBy)]]
   flatMap[is.na(map), map := 0]
   flatMap[, dif := {
     map != data.table::shift(map, fill = FALSE) |
       intersectionHere != data.table::shift(intersectionHere, fill = FALSE) |
       mismatchHere != data.table::shift(mismatchHere, fill = FALSE)
   }]
+  flatMap
+
+}
+
+cuteSeq <- function(flatMap,
+                    seqPalette,
+                    mismatchColor = "red",
+                    # considerStrand = TRUE,
+                    includeLegend = TRUE,
+                    linesWidth = 60,
+                    spacingEveryNth = 10) {
+  # gbS <<- gbSequence
+
+
+  if (spacingEveryNth)
+    flatMap[seq(spacingEveryNth, nrow(flatMap), spacingEveryNth),
+            gbSeq := sprintf("<span style='letter-spacing:0.5em;'>%s</span>", gbSeq)]
   flatMap[,
           coloredSeq :=
             ifelse(dif,
@@ -141,11 +154,11 @@ cuteSeq <- function(gbSequence,
                           sprintf("</span><span style='background-color: %s;%s' title='%s'>%s",
                                   ifelse(mismatchHere,
                                          mismatchColor,
-                                         color),
+                                         seqPalette[typeID, color]),
                                   ifelse(intersectionHere,
                                          "text-decoration:underline;",
                                          ""),
-                                  features[map, get(labelBy)],
+                                  label,
                                   gbSeq)
                           #)
                    ),
@@ -169,7 +182,7 @@ cuteSeq <- function(gbSequence,
               # paste0(collapse = "<br>")
                 htmlTable::htmlTable(seqPalette[
                   , Color := sprintf("<span style='background-color: %s;'>ATGC</span>", color)]
-                  [, Features := paste(features[get(colorBy) == param, get(labelBy)], collapse = ", "),
+                  [, Features := paste(unique(flatMap[typeID == param, label]), collapse = ", "),
                     by = param]
                   # [,c("param", "strand") = list(str_match(param, "(.*) ?([+-])$?"))]
                   [, .(Color, param, Features)],
