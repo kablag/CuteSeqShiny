@@ -138,13 +138,12 @@ cuteSeq <- function(gbSequence,
                           #        sprintf("</span><span style='background-color: %s'>%s",
                           #                mismatchColor,
                           #                gbSeq),
-                          sprintf("</span><span style='background-color: %s;' class=%s title='%s'>%s",
+                          sprintf("</span><span style='background-color: %s;%s' title='%s'>%s",
                                   ifelse(mismatchHere,
                                          mismatchColor,
                                          color),
                                   ifelse(intersectionHere,
-                                         # "text-decoration:underline;",
-                                         "intersection",
+                                         "text-decoration:underline;",
                                          ""),
                                   features[map, get(labelBy)],
                                   gbSeq)
@@ -169,7 +168,7 @@ cuteSeq <- function(gbSequence,
               #            by = param][, toprint] %>>%
               # paste0(collapse = "<br>")
                 htmlTable::htmlTable(seqPalette[
-                  , Color := sprintf("<span class=param-%s>ATGC</span>", .I)]
+                  , Color := sprintf("<span style='background-color: %s;'>ATGC</span>", color)]
                   [, Features := paste(features[get(colorBy) == param, get(labelBy)], collapse = ", "),
                     by = param]
                   # [,c("param", "strand") = list(str_match(param, "(.*) ?([+-])$?"))]
@@ -182,21 +181,21 @@ cuteSeq <- function(gbSequence,
                              mismatchColor),
                      ""),
               ifelse(any(flatMap[, intersectionHere] == TRUE),
-                     "<br><span class=intersection>&emsp;&emsp;</span>&emsp;<b>Intersection</b>",
+                     "<br><span style='text-decoration:underline;'>&emsp;&emsp;</span>&emsp;<b>Intersection</b>",
                      ""))
   }
-  styles <-
-    paste0("<style>",
-           "span.intersection{text-decoration:underline;}",
-           sprintf("span.mismatch{background-color: %s;}", mismatchColor),
-           paste0(seqPalette[, sprintf("span.param-%s{background-color:%s;}",
-                                       .I,
-                                       color)],
-                  collapse = ""),
-           "</style>\n")
+  # styles <-
+  #   paste0("<style>",
+  #          "span.intersection{text-decoration:underline;}",
+  #          sprintf("span.mismatch{background-color: %s;}", mismatchColor),
+  #          paste0(seqPalette[, sprintf("span.param-%s{background-color:%s;}",
+  #                                      .I,
+  #                                      color)],
+  #                 collapse = ""),
+  #          "</style>\n")
   paste0(
     "<p>",
-    styles,
+    # styles,
     paste0(c(flatMap$coloredSeq, "</span>"), collapse = ""),
     "<br><br>",
     legendTbl,
