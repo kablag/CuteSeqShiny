@@ -388,10 +388,10 @@ shinyServer(function(input, output, session) {
     print(ids)
     print("================")
     req(ids)
-    ids <- data.table(ids)
-    isolate({
+    # input[[ids[1, 1]]]
+    # isolate({
       req(autoPalette(), !values$invalidatePalette)
-
+      ids <- data.table(ids)
       # req(!values$invalidatePalette)
       cat("Updating working palette\n")
 
@@ -405,7 +405,7 @@ shinyServer(function(input, output, session) {
       ids <- ids[idParam %in% autoPalette()[, idParam]]
       palette <- sapply(ids[, uiId], function(x) input[[x]])
       autoPalette()[idParam %in% ids[, idParam], .(param, idParam, color = palette)]
-    })
+    # })
   })
 
 
