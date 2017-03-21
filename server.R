@@ -313,26 +313,32 @@ shinyServer(function(input, output, session) {
 
 
   autoPalette <- reactive({
-    req(input$colorBy)
+    req(input$colorBy, input$considerStrand,
+        input$inputTypeTabs, values$workingFeatures)
     cat("Generating auto palette\n")
-    palette <- generatePalette(
-      {
-        if (input$inputTypeTabs == "GenBank") {
-          values$workingFeatures
-        } else {
-          values$workingFeatures[start != -1]
-        }
-      },
-      input$colorBy,
-      input$considerStrand,
-      # input$mismatchColor
-      "#7FFF00"
-    )
-    # removeUI(
-    #   selector = "div:has(> #color_uis)",
-    #   immediate = TRUE
-    # )
-    palette
+    isolate({
+      palette <- generatePalette(
+        {
+          if (input$inputTypeTabs == "GenBank") {
+            values$workingFeatures
+          } else {
+            values$workingFeatures[start != -1]
+          }
+        },
+        input$colorBy,
+        input$considerStrand,
+        # input$mismatchColor
+        "#7FFF00",
+        switch(input$preservePalette + 1,
+               NULL,
+               values$workingPalette)
+      )
+      # removeUI(
+      #   selector = "div:has(> #color_uis)",
+      #   immediate = TRUE
+      # )
+      palette
+    })
   })
   # observe({
   #   req(input$colorBy,
@@ -374,8 +380,8 @@ shinyServer(function(input, output, session) {
     })
   })
 
-  workingPalette <- reactive({
-    # observe({
+  # workingPalette <- reactive({
+    observe({
     ids <- str_match(names(input), "Color_(.*)") %>>%
       na.omit()
     # req(input$Color_mismatchColor)
@@ -390,27 +396,28 @@ shinyServer(function(input, output, session) {
     req(ids)
     # input[[ids[1, 1]]]
     # isolate({
-      req(autoPalette(), !values$invalidatePalette)
-      ids <- data.table(ids)
-      # req(!values$invalidatePalette)
-      cat("Updating working palette\n")
+    req(autoPalette(), !values$invalidatePalette)
+    ids <- data.table(ids)
+    # req(!values$invalidatePalette)
+    cat("Updating working palette\n")
 
-      setnames(ids, c("V1", "V2"), c("uiId", "idParam"))
-      sapply(ids[!(idParam %in% autoPalette()[, idParam]),
-                 uiId],
-             function(id) removeUI(
-               selector = sprintf("div:has(> %s)", id),
-               immediate = TRUE
-             ))
-      ids <- ids[idParam %in% autoPalette()[, idParam]]
-      palette <- sapply(ids[, uiId], function(x) input[[x]])
+    setnames(ids, c("V1", "V2"), c("uiId", "idParam"))
+    sapply(ids[!(idParam %in% autoPalette()[, idParam]),
+               uiId],
+           function(id) removeUI(
+             selector = sprintf("div:has(> %s)", id),
+             immediate = TRUE
+           ))
+    ids <- ids[idParam %in% autoPalette()[, idParam]]
+    palette <- sapply(ids[, uiId], function(x) input[[x]])
+    values$workingPalette <-
       autoPalette()[idParam %in% ids[, idParam], .(param, idParam, color = palette)]
     # })
   })
 
 
   cuteSeqResult <- reactive({
-    req(flatMap(), workingPalette())#, values$redraw)
+    req(flatMap(), values$workingPalette)#, values$redraw)
     # req(autoPalette())
     cat("Generating cuteSeqResult\n")
     isolate({
@@ -420,7 +427,7 @@ shinyServer(function(input, output, session) {
           "word-break:break-all;white-space:normal;'>",
           cuteSeq(
             flatMap = flatMap(),
-            seqPalette = workingPalette(),
+            seqPalette = values$workingPalette,
             # seqPalette = autoPalette(),
             includeLegend = input$includeLegend,
             linesWidth = input$linesWidth,

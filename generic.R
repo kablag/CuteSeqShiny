@@ -71,22 +71,30 @@ getGeneiousTypes <- function(featuresTable) {
                 type := sub("Geneious type: (.*)", "\\1", note)]
 }
 
-generatePalette <- function(gbFeatures, colorBy, considerStrand, mismatchColor) {
-  tryCatch({
+generatePalette <- function(gbFeatures,
+                            colorBy,
+                            considerStrand,
+                            mismatchColor,
+                            currentPalette) {
     if (considerStrand) {
       gbFeatures[, c(colorBy) := paste(get(colorBy), strand)]
     }
     uniqueColorByParams <- unique(gbFeatures[, get(colorBy)])
-    data.table(param = c(uniqueColorByParams, "Mismatch Color"),
+    newPalette <- data.table(param = c(uniqueColorByParams, "Mismatch Color"),
                idParam = c(str_replace_all(uniqueColorByParams,
                                          c("-" = "B", "\\+" = "A", " " = "-")),
                            "mismatchColor"),
                color = c(getColors(length(uniqueColorByParams)),
                          mismatchColor)) %>>%
       setkey(param)
-  },
-  error = function(e) { NULL }
-  )
+    if (!is.null(currentPalette)) {
+    merge(newPalette, currentPalette,
+          all.x = TRUE, by = c("param"))[
+            !is.na(color.y), color.x := color.y][
+            ,.(param, idParam=idParam.x, color = color.x)]
+    } else {
+      newPalette
+    }
 }
 
 genFlatMap <- function(gbSequence,
