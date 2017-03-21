@@ -71,14 +71,18 @@ getGeneiousTypes <- function(featuresTable) {
                 type := sub("Geneious type: (.*)", "\\1", note)]
 }
 
-genSeqPalette <- function(gbFeatures, colorBy, considerStrand) {
+generatePalette <- function(gbFeatures, colorBy, considerStrand, mismatchColor) {
   tryCatch({
     if (considerStrand) {
       gbFeatures[, c(colorBy) := paste(get(colorBy), strand)]
     }
     uniqueColorByParams <- unique(gbFeatures[, get(colorBy)])
-    data.table(param = uniqueColorByParams,
-               color = getColors(length(uniqueColorByParams))) %>>%
+    data.table(param = c(uniqueColorByParams, "Mismatch Color"),
+               idParam = c(str_replace_all(uniqueColorByParams,
+                                         c("-" = "B", "\\+" = "A", " " = "-")),
+                           "mismatchColor"),
+               color = c(getColors(length(uniqueColorByParams)),
+                         mismatchColor)) %>>%
       setkey(param)
   },
   error = function(e) { NULL }
@@ -131,8 +135,6 @@ genFlatMap <- function(gbSequence,
 
 cuteSeq <- function(flatMap,
                     seqPalette,
-                    mismatchColor = "red",
-                    # considerStrand = TRUE,
                     includeLegend = TRUE,
                     linesWidth = 60,
                     spacingEveryNth = 10) {
@@ -153,7 +155,7 @@ cuteSeq <- function(flatMap,
                           #                gbSeq),
                           sprintf("</span><span style='background-color: %s;%s' title='%s'>%s",
                                   ifelse(mismatchHere,
-                                         mismatchColor,
+                                         seqPalette["Mismatch Color", color],
                                          seqPalette[typeID, color]),
                                   ifelse(intersectionHere,
                                          "text-decoration:underline;",
@@ -180,18 +182,18 @@ cuteSeq <- function(flatMap,
               #                     paste(features[get(colorBy) == param, get(labelBy)], collapse = ",&ensp;")),
               #            by = param][, toprint] %>>%
               # paste0(collapse = "<br>")
-                htmlTable::htmlTable(seqPalette[
-                  , Color := sprintf("<span style='background-color: %s;'>ATGC</span>", color)]
-                  [, Features := paste(unique(flatMap[typeID == param, label]), collapse = ", "),
+                htmlTable::htmlTable(seqPalette[!"Mismatch Color",
+                                                Color := sprintf("<span style='background-color: %s;'>ATGC</span>", color)]
+                  [!"Mismatch Color", Features := paste(unique(flatMap[typeID == param, label]), collapse = ", "),
                     by = param]
                   # [,c("param", "strand") = list(str_match(param, "(.*) ?([+-])$?"))]
-                  [, .(Color, param, Features)],
+                  [!"Mismatch Color", .(Color, param, Features)],
                   rnames = FALSE, header = c("Color", "Color Group Name", "Features"),
                   align = paste(rep('l', 3), collapse = ''))
               ,
               ifelse(any(flatMap[, mismatchHere] == TRUE),
                      sprintf("<br><span style='background-color: %s'>&emsp;&emsp;</span>&emsp;<b>Mismatch</b>",
-                             mismatchColor),
+                             seqPalette["Mismatch Color", color]),
                      ""),
               ifelse(any(flatMap[, intersectionHere] == TRUE),
                      "<br><span style='text-decoration:underline;'>&emsp;&emsp;</span>&emsp;<b>Intersection</b>",

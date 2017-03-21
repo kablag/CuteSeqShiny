@@ -76,45 +76,53 @@ shinyUI(fluidPage(
     ),
     DT::dataTableOutput("featuresTbl")),
 
-    tags$h3("Result"),
-    # fluidRow(
-    #   column(2,
-    #          numericInput("linesWidth", "Lines Width", 0, min = 0, step = 1)),
-    #   column(2,
-    #          selectInput("spacingEveryNth", "Spacing Every Nth",
-    #                      list("None" = "0",
-    #                           "3" = "3",
-    #                           "5" = "5",
-    #                           "10" = "10"),
-    #                      selected = "10")),
-    #   column(2,
-    #          checkboxInput("includeLegend", "Include Legend", TRUE)),
-    #   column(2,
-    #          colourpicker::colourInput("mismatchColor",
-    #                                    "Mismatch Color",
-    #                                    "chartreuse",
-    #                                    palette = "limited"))
-    # ),
-    fluidRow(
-      column(2, wellPanel(
+  tags$h3("Result"),
+  # fluidRow(
+  #   column(2,
+  #          numericInput("linesWidth", "Lines Width", 0, min = 0, step = 1)),
+  #   column(2,
+  #          selectInput("spacingEveryNth", "Spacing Every Nth",
+  #                      list("None" = "0",
+  #                           "3" = "3",
+  #                           "5" = "5",
+  #                           "10" = "10"),
+  #                      selected = "10")),
+  #   column(2,
+  #          checkboxInput("includeLegend", "Include Legend", TRUE)),
+  #   column(2,
+  #          colourpicker::colourInput("mismatchColor",
+  #                                    "Mismatch Color",
+  #                                    "chartreuse",
+  #                                    palette = "limited"))
+  # ),
+  fluidRow(
 
-                      numericInput("linesWidth", "Lines Width", 0, min = 0, step = 1),
+      column(2,
+             wellPanel(
+             numericInput("linesWidth", "Lines Width", 0, min = 0, step = 1),
 
-                      selectInput("spacingEveryNth", "Spacing Every Nth",
-                                  list("None" = "0",
-                                       "3" = "3",
-                                       "5" = "5",
-                                       "10" = "10"),
-                                  selected = "10"),
+             selectInput("spacingEveryNth", "Spacing Every Nth",
+                         list("None" = "0",
+                              "3" = "3",
+                              "5" = "5",
+                              "10" = "10"),
+                         selected = "10"),
 
-                      checkboxInput("includeLegend", "Include Legend", TRUE),
-
-                      colourpicker::colourInput("mismatchColor",
-                                                "Mismatch Color",
-                                                "chartreuse",
-                                                palette = "limited")
+             checkboxInput("includeLegend", "Include Legend", TRUE)#,
+             # colourpicker::colourInput("mismatchColor",
+             #                           "Mismatch Color",
+             #                           "chartreuse",
+             #                           palette = "limited")
+      )),
+      column(2,
+             wellPanel(
+               checkboxInput("preservePalette",
+                             "Preserve Palette",
+                             FALSE),
+             uiOutput("changePaletteUI")
+             # DT::dataTableOutput("paletteTbl")
              )),
-      column(6,
-    htmlOutput("cuteSeqHtml"))
+    column(6,
+           htmlOutput("cuteSeqHtml"))
   )
 ))
