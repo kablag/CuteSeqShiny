@@ -186,9 +186,11 @@ cuteSeq <- function(flatMap,
                                                 Color := sprintf("<span style='background-color: %s;'>ATGC</span>", color)]
                   [!"Mismatch Color", Features := paste(unique(flatMap[typeID == param, label]), collapse = ", "),
                     by = param]
+                  [!"Mismatch Color", Strand :=  str_extract(param,"[-\\+]$")]
+                  [!"Mismatch Color", Param :=  str_replace(param,"[-\\+]$", "")]
                   # [,c("param", "strand") = list(str_match(param, "(.*) ?([+-])$?"))]
-                  [!"Mismatch Color", .(Color, param, Features)],
-                  rnames = FALSE, header = c("Color", "Color Group Name", "Features"),
+                  [!"Mismatch Color", .(Color, Param, Strand, Features)],
+                  rnames = FALSE, header = c(" Color ", " Color Group Name ", " Strand ", " Features "),
                   align = paste(rep('l', 3), collapse = ''))
               ,
               ifelse(any(flatMap[, mismatchHere] == TRUE),
