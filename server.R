@@ -137,37 +137,15 @@ shinyServer(function(input, output, session) {
                  }
                }
         )
-        # if (ncol(dt) > 4)
-        #   dt <- dt[, 1:4]
         setnames(dt, 1:4, c("seqnames", "seq", "type", "maxMismatch"))
         dt[type == "", type := "primer"]
         dt[is.na(maxMismatch), maxMismatch := 0]
         dt <- dt[seq != "" & seqnames != "" & type != ""]
-        #
-        # dt[, seq := DNAString(seq)]
         dt <- rbindlist(list(dt, dt),
                         use.names = TRUE, fill = FALSE, idcol = NULL)
         dt[, strand := rep(c("+","-"), each = nrow(dt) / 2)]
-        # dt[, ID := .I]
         dt[, seq := sapply(seq, function(x) clearSeq(x))]
         dt2 <- data.table()
-        # dt[, c("start", "end", "mismatchPositions") := {
-        #   pattern <- switch(strand,
-        #                     "+" = seq,
-        #                     "-" = Biostrings::reverseComplement(Biostrings::DNAString(seq)))
-        #   res <-
-        #     Biostrings::matchPattern(
-        #       pattern,
-        #       values$sequence,
-        #       max.mismatch = maxMismatch)
-        #   mismatches <- Biostrings::mismatch(pattern, res)
-        #
-        #   # dt2 <- rbindlist(list(dt2, data.table(1, list(c(1,2)))))
-        #   if (length(res)) list(res[1]@ranges@start,
-        #                         res[1]@ranges@start + res[1]@ranges@width,
-        #                         mismatches[1])
-        #   else list(-1L, -1L, list(c(0L, 0L)))},
-        #   by = ID]
         for (i in 1:nrow(dt)) {
           pattern <- switch(dt[i, strand],
                             "+" = dt[i, seq],
@@ -199,7 +177,6 @@ shinyServer(function(input, output, session) {
                                 start = res[mmatchIndex]@ranges@start,
                                 end = res[mmatchIndex]@ranges@start + res[mmatchIndex]@ranges@width,
                                 mismatches = mismatches[mmatchIndex])))
-              # "seqnames", "seq", "type", "maxMismatch"
             }
           }
           else {
@@ -217,7 +194,6 @@ shinyServer(function(input, output, session) {
           }
         }
         values$features[["Plain"]] <- dt2
-
       }
     })
   })
@@ -388,19 +364,15 @@ shinyServer(function(input, output, session) {
     ids <- str_match(names(input), "Color_(.*)") %>>%
       na.omit()
     values$updateWorkingPalette
+    values$paletteLoaded
     # req(input$Color_mismatchColor)
 
-    # isolate({
-    # print(values$invalidatePalette)
-    # print("==")
-    # print(autoPalette())
-    # print("==")
-    # print(ids)
-    # print("================")
-    # req(ids)
-    # input[[ids[1, 1]]]
-    # isolate({
-    req(autoPalette(), !values$invalidatePalette)
+
+    req( !values$invalidatePalette,
+         nrow(ids) != 0)
+    sapply(ids[, 1], function(x) input[[x]])
+    isolate({
+      req(all(autoPalette()[,idParam] %in% ids[,2]))
     ids <- data.table(ids)
     # req(!values$invalidatePalette)
     cat("Updating working palette\n")
@@ -416,13 +388,15 @@ shinyServer(function(input, output, session) {
     palette <- sapply(ids[, uiId], function(x) input[[x]])
     values$workingPalette <-
       autoPalette()[idParam %in% ids[, idParam], .(param, idParam, color = palette)]
-    # })
+
+    })
   })
 
 
   cuteSeqResult <- reactive({
-    req(flatMap(), nrow(values$workingPalette) != 0)#, values$redraw)
-    print(values$workingPalette)
+    # req(flatMap(), nrow(values$workingPalette) != 0)#, values$redraw)
+    req(nrow(values$workingPalette) != 0, values$workingSequence)#, values$redraw)
+    # print(values$workingPalette)
     # req(autoPalette())
     cat("Generating cuteSeqResult\n")
     isolate({
@@ -469,14 +443,16 @@ shinyServer(function(input, output, session) {
         {
           uiElementName <- sprintf("Color_%s", genParamID(param))
           if (!is.null(input[[uiElementName]])) {
-            print(paste(uiElementName, "ok"))
+            # print(paste(uiElementName, "ok"))
             colourpicker::updateColourInput(
               session,
               uiElementName,
               value = color)
-            values$updateWorkingPalette <- runif(1)
+            # anyUpdated <- TRUE
+            # invalidateLater(1000)
           }
         }, by = param]
+      # values$paletteLoaded <- runif(1)
     })
   })
 })

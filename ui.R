@@ -1,6 +1,6 @@
 library(shiny)
 # library(rhandsontable)
-cuteSeqVersion <- 1.0
+cuteSeqVersion <- 1.1
 
 shinyUI(fluidPage(
   tags$head(
@@ -11,11 +11,13 @@ shinyUI(fluidPage(
     HTML(
       paste0(
         sprintf("CuteSeq %.01f&emsp;", cuteSeqVersion),
-        tags$a(href = "www.evrogen.com",
+        tags$a(href = "http://www.evrogen.com",
+               target = "_blank",
                tags$img(alt = "Evrogen",
                         src = "http://evrogen.com/img/evrogen.png",
                         border = 0))
-      ))),
+      )),
+    windowTitle = sprintf("CuteSeq %.01f", cuteSeqVersion)),
   wellPanel(
     tags$h3("Input"),
     tabsetPanel(
@@ -134,23 +136,47 @@ shinyUI(fluidPage(
                column(6,
                       checkboxInput("lockPalette",
                                     "Lock Palette",
-                                    FALSE)),
-               column(6,
-                      h5("Load Palette"))),
+                                    FALSE))
+               # ,
+               # column(6,
+               #        h5("Load Palette"))
+               ),
              fluidRow(
                column(6,
                       downloadButton("savePalette",
                                      "Save Palette")),
                column(6,
-                      fileInput("loadPalette",
-                                # "Load Palette"))
-                                NULL))
+                      HTML('<div class="form-group shiny-input-container">
+                        <div class="input-group">
+                        <label class="input-group-btn">
+                        <span class="btn btn-default btn-file">
+                        Load Palette...
+                      <input id="loadPalette" name="loadPalette" type="file" style="display: none;"/>
+                        </span>
+                        </label>
+                        </div>
+                        </div>
+                        </div>')
+                      # div(class = "form-group shiny-input-container",
+                      #     div(class = "input-group",
+                      #         tags$label(class="input-group-btn",
+                      #                    span(class="btn btn-default btn-file",
+                      #                         "Load Palette...",
+                      #                         tags$input(type="text", class="form-control", placeholder="No file selected", readonly="readonly"))),
+                      #         div(id="loadPalette_progress", class="progress progress-striped active shiny-file-input-progress",
+                      #             div(class="progress-bar"))
+                      #         ))
+                      # ,
+                      # fileInput("loadPalette",
+                      #           # "Load Palette"))
+                      #           NULL)
+
              ),
-             uiOutput("changePaletteUI")
+             uiOutput("changePaletteUI"))
              # DT::dataTableOutput("paletteTbl")
-           )),
+           ),
     column(6,
-           htmlOutput("cuteSeqHtml"))
+           htmlOutput("cuteSeqHtml")))
   ),
   div(
     style = "margin-bottom:5px;",
