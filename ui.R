@@ -6,7 +6,7 @@ shinyUI(fluidPage(
     includeScript("www/js/allowTab.js"),
     includeScript("www/js/google-analytics.js")
   ),
-  titlePanel("CuteSeq"),
+  titlePanel("CuteSeq 1.0"),
   wellPanel(
     tags$h3("Input"),
     tabsetPanel(
