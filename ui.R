@@ -1,18 +1,28 @@
 library(shiny)
 # library(rhandsontable)
+cuteSeqVersion <- 1.0
 
 shinyUI(fluidPage(
   tags$head(
     includeScript("www/js/allowTab.js"),
     includeScript("www/js/google-analytics.js")
   ),
-  titlePanel("CuteSeq 1.0"),
+  titlePanel(
+    HTML(
+      paste0(
+        sprintf("CuteSeq %.01f&emsp;", cuteSeqVersion),
+        tags$a(href = "www.evrogen.com",
+               tags$img(alt = "Evrogen",
+                        src = "http://evrogen.com/img/evrogen.png",
+                        border = 0))
+      ))),
   wellPanel(
     tags$h3("Input"),
     tabsetPanel(
       id = "inputTypeTabs",
       tabPanel(
         "Plain",
+        div(style = "margin-top:12px;",
         fluidRow(
           column(
             6,
@@ -55,10 +65,14 @@ shinyUI(fluidPage(
                    )
                  )
           )
-
+        )
         )),
       tabPanel("GenBank",
-               fileInput("gbFile", "Upload GenBank File")
+               div(style = "margin-top:12px;",
+                   fluidRow(
+                     column(2,
+               fileInput("gbFile", "Upload GenBank File")))
+               )
       )
     )),
   uiOutput("seqNameSelectUI"),
@@ -97,8 +111,8 @@ shinyUI(fluidPage(
   # ),
   fluidRow(
 
-      column(2,
-             wellPanel(
+    column(2,
+           wellPanel(
              numericInput("linesWidth", "Lines Width", 0, min = 0, step = 1),
 
              selectInput("spacingEveryNth", "Spacing Every Nth",
@@ -113,29 +127,39 @@ shinyUI(fluidPage(
              #                           "Mismatch Color",
              #                           "chartreuse",
              #                           palette = "limited")
-      )),
-      column(2,
-             wellPanel(
-               fluidRow(
-                 column(6,
-                        checkboxInput("lockPalette",
-                                      "Lock Palette",
-                                      FALSE)),
-                 column(6,
-                        h5("Load Palette"))),
-               fluidRow(
-                 column(6,
-                        downloadButton("savePalette",
-                                       "Save Palette")),
-                 column(6,
-                        fileInput("loadPalette",
-                                  # "Load Palette"))
-                                  NULL))
-                 ),
+           )),
+    column(2,
+           wellPanel(
+             fluidRow(
+               column(6,
+                      checkboxInput("lockPalette",
+                                    "Lock Palette",
+                                    FALSE)),
+               column(6,
+                      h5("Load Palette"))),
+             fluidRow(
+               column(6,
+                      downloadButton("savePalette",
+                                     "Save Palette")),
+               column(6,
+                      fileInput("loadPalette",
+                                # "Load Palette"))
+                                NULL))
+             ),
              uiOutput("changePaletteUI")
              # DT::dataTableOutput("paletteTbl")
-             )),
+           )),
     column(6,
            htmlOutput("cuteSeqHtml"))
+  ),
+  div(
+    style = "margin-bottom:5px;",
+    HTML(paste0(
+      "Konstantin Blagodatskikh (",
+      tags$a(href = "mailto:k.blag@yandex.ru?Subject=CuteSeq",
+             target = "_top",
+             "k.blag@yandex.ru"),
+      ")"))
   )
 ))
+
