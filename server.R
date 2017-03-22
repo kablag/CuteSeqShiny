@@ -329,9 +329,12 @@ shinyServer(function(input, output, session) {
         input$considerStrand,
         # input$mismatchColor
         "#7FFF00",
-        switch(input$preservePalette + 1,
-               NULL,
-               values$workingPalette)
+        {
+          if (input$lockPalette)
+            values$workingPalette
+          else
+            NULL
+        }
       )
       # removeUI(
       #   selector = "div:has(> #color_uis)",
@@ -344,7 +347,7 @@ shinyServer(function(input, output, session) {
   #   req(input$colorBy,
   #       values$workingFeatures,
   #       values$workingFeatures[[input$colorBy]],
-  #       !input$preservePalette)
+  #       !input$lockPalette)
   #   cat("Generating auto palette\n")
   #   values$autoPalette <-
   #       generatePalette(
@@ -384,16 +387,17 @@ shinyServer(function(input, output, session) {
     observe({
     ids <- str_match(names(input), "Color_(.*)") %>>%
       na.omit()
+    values$updateWorkingPalette
     # req(input$Color_mismatchColor)
 
     # isolate({
-    print(values$invalidatePalette)
-    print("==")
-    print(autoPalette())
-    print("==")
-    print(ids)
-    print("================")
-    req(ids)
+    # print(values$invalidatePalette)
+    # print("==")
+    # print(autoPalette())
+    # print("==")
+    # print(ids)
+    # print("================")
+    # req(ids)
     # input[[ids[1, 1]]]
     # isolate({
     req(autoPalette(), !values$invalidatePalette)
@@ -406,7 +410,7 @@ shinyServer(function(input, output, session) {
                uiId],
            function(id) removeUI(
              selector = sprintf("div:has(> %s)", id),
-             immediate = TRUE
+             immediate = FALSE
            ))
     ids <- ids[idParam %in% autoPalette()[, idParam]]
     palette <- sapply(ids[, uiId], function(x) input[[x]])
@@ -417,7 +421,8 @@ shinyServer(function(input, output, session) {
 
 
   cuteSeqResult <- reactive({
-    req(flatMap(), values$workingPalette)#, values$redraw)
+    req(flatMap(), nrow(values$workingPalette) != 0)#, values$redraw)
+    print(values$workingPalette)
     # req(autoPalette())
     cat("Generating cuteSeqResult\n")
     isolate({
@@ -445,11 +450,33 @@ shinyServer(function(input, output, session) {
     )
   })
 
-  # workingPalette <- reactive({
-  #   req(autoPalette())
-  #   autoPalette()
-  # })
 
+  output$savePalette <- downloadHandler(
+    filename = "palette.txt",
+    content = function(file) {
+      write.csv(values$workingPalette[, .(param, color)] %>>% (? .),
+                file, row.names = FALSE)
+    },
+    contentType = "text/csv"
+  )
 
-
+  observe({
+    req(input$loadPalette)
+    cat("Loading Palette\n")
+    isolate({
+      tbl <- fread(input$loadPalette$datapath)[
+        ,
+        {
+          uiElementName <- sprintf("Color_%s", genParamID(param))
+          if (!is.null(input[[uiElementName]])) {
+            print(paste(uiElementName, "ok"))
+            colourpicker::updateColourInput(
+              session,
+              uiElementName,
+              value = color)
+            values$updateWorkingPalette <- runif(1)
+          }
+        }, by = param]
+    })
+  })
 })

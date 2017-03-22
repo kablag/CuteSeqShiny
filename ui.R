@@ -116,9 +116,22 @@ shinyUI(fluidPage(
       )),
       column(2,
              wellPanel(
-               checkboxInput("preservePalette",
-                             "Preserve Palette",
-                             FALSE),
+               fluidRow(
+                 column(6,
+                        checkboxInput("lockPalette",
+                                      "Lock Palette",
+                                      FALSE)),
+                 column(6,
+                        h5("Load Palette"))),
+               fluidRow(
+                 column(6,
+                        downloadButton("savePalette",
+                                       "Save Palette")),
+                 column(6,
+                        fileInput("loadPalette",
+                                  # "Load Palette"))
+                                  NULL))
+                 ),
              uiOutput("changePaletteUI")
              # DT::dataTableOutput("paletteTbl")
              )),

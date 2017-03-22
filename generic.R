@@ -24,6 +24,11 @@
 # }
 library(stringr)
 
+genParamID <- function(param) {
+  str_replace_all(param,
+                  c("-" = "B", "\\+" = "A", " " = "-"))
+}
+
 clearSeq <- function(dnaseq) {
   dnaseq <- str_replace_all(dnaseq, "\\(([a-zA-Z])-[^\\)]*\\)", "\\1")
   dnaseq <- str_replace_all(dnaseq, "-?\\([^\\)]*\\)-?", "")
@@ -81,9 +86,8 @@ generatePalette <- function(gbFeatures,
     }
     uniqueColorByParams <- unique(gbFeatures[, get(colorBy)])
     newPalette <- data.table(param = c(uniqueColorByParams, "Mismatch Color"),
-               idParam = c(str_replace_all(uniqueColorByParams,
-                                         c("-" = "B", "\\+" = "A", " " = "-")),
-                           "mismatchColor"),
+               idParam = c(genParamID(uniqueColorByParams),
+                           genParamID("Mismatch Color")),
                color = c(getColors(length(uniqueColorByParams)),
                          mismatchColor)) %>>%
       setkey(param)
