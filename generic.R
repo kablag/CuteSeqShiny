@@ -106,7 +106,8 @@ genFlatMap <- function(gbSequence,
                        gbSequenceStart = 1,
                        colorBy,
                        labelBy,
-                       considerStrand = TRUE) {
+                       considerStrand = TRUE,
+                       markAmbiguity = TRUE) {
   features <- as.data.table(
     gbFeatures)[, ID := .I]
   if (considerStrand) {
@@ -118,7 +119,8 @@ genFlatMap <- function(gbSequence,
     gbSeq = strsplit(as.character(gbSequence), NULL)[[1]],
     map = as.integer(NA),
     intersectionHere = FALSE,
-    mismatchHere = FALSE
+    mismatchHere = FALSE,
+    ambiguityHere = FALSE
   )
 
   setkey(flatMap, seqI)
@@ -133,16 +135,19 @@ genFlatMap <- function(gbSequence,
   #                           seqPalette[map, color],
   #         # ),
   #         by = seqI]
+  if (markAmbiguity) {
+    flatMap[, ambiguityHere := !(gbSeq %in% c("A", "T", "G", "C"))]
+  }
   flatMap[!is.na(map), label := features[map, get(labelBy)]]
   flatMap[!is.na(map), typeID := features[map, get(colorBy)]]
   flatMap[is.na(map), map := 0]
   flatMap[, dif := {
     map != data.table::shift(map, fill = FALSE) |
       intersectionHere != data.table::shift(intersectionHere, fill = FALSE) |
-      mismatchHere != data.table::shift(mismatchHere, fill = FALSE)
+      mismatchHere != data.table::shift(mismatchHere, fill = FALSE) |
+      ambiguityHere != data.table::shift(ambiguityHere, fill = FALSE)
   }]
   flatMap
-
 }
 
 cuteSeq <- function(flatMap,
@@ -160,17 +165,28 @@ cuteSeq <- function(flatMap,
           coloredSeq :=
             ifelse(dif,
                    ifelse(map == 0,
-                          sprintf("</span>%s", gbSeq),
+                          ifelse(ambiguityHere,
+                                 {
+                                 sprintf("%s<span style='font-weight:bold;'>%s",
+                                         ifelse(!is.na(data.table::shift(typeID, fill = FALSE)),
+                                                "</span>",
+                                                ""),
+                                         gbSeq)
+                                   },
+                                 sprintf("</span>%s", gbSeq)),
                           # ifelse(map == -1,
                           #        sprintf("</span><span style='background-color: %s'>%s",
                           #                mismatchColor,
                           #                gbSeq),
-                          sprintf("</span><span style='background-color: %s;%s' title='%s'>%s",
+                          sprintf("</span><span style='background-color: %s;%s%s' title='%s'>%s",
                                   ifelse(mismatchHere,
                                          seqPalette["Mismatch Color", color],
                                          seqPalette[typeID, color]),
                                   ifelse(intersectionHere,
                                          "text-decoration:underline;",
+                                         ""),
+                                  ifelse(ambiguityHere,
+                                         "font-weight:bold;",
                                          ""),
                                   label,
                                   gbSeq)

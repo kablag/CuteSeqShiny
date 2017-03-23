@@ -199,6 +199,8 @@ shinyServer(function(input, output, session) {
   })
 
   observe({
+    input$markAmbiguity
+    input$considerStrand
     req(input$inputTypeTabs)
     cat("Select working seq and features by input tab\n")
     values$workingFeatures <- values$features[[input$inputTypeTabs]]
@@ -283,13 +285,15 @@ shinyServer(function(input, output, session) {
       gbSequenceStart = 1,
       colorBy = input$colorBy,
       labelBy = input$labelBy,
-      considerStrand = input$considerStrand
+      considerStrand = input$considerStrand,
+      markAmbiguity = input$markAmbiguity
     )
   })
 
 
   autoPalette <- reactive({
-    req(input$colorBy, input$considerStrand,
+    flatMap()
+    req(input$colorBy,
         input$inputTypeTabs, values$workingFeatures)
     cat("Generating auto palette\n")
     isolate({
@@ -417,6 +421,8 @@ shinyServer(function(input, output, session) {
   })
 
   output$cuteSeqHtml <- renderUI({
+    # input$markAmbiguity
+
     req(cuteSeqResult())
     cat("Generating cuteSeqHtml UI\n")
     list(

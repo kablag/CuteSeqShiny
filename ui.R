@@ -1,6 +1,6 @@
 library(shiny)
 # library(rhandsontable)
-cuteSeqVersion <- 1.1
+cuteSeqVersion <- 1.2
 
 shinyUI(fluidPage(
   tags$head(
@@ -36,6 +36,7 @@ shinyUI(fluidPage(
                         "</div>")),
             fluidRow(
               column(2,
+                     checkboxInput("markAmbiguity", "Mark Ambiguity", TRUE),
                      actionButton("plainInputExample", "Example")
               )
             )
