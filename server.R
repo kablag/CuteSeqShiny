@@ -60,11 +60,11 @@ shinyServer(function(input, output, session) {
     cat("Loading plain input example\n")
     updateTextAreaInput(
       session, "plainSequenceInput",
-      value = paste0("ATTTTTGCCACATTGAAGGAAAATTATTTCCACCAAGATTTCCCT",
+      value = paste0("RATTTTTGCCACATTRGAAGGAAAATTATTTCCACCAAGATTTCCCT",
                      "ACAGCCAAACGATCTACCAACTACAAAAATGGAAAAAATAATTTAGGACATGTA",
-                     "AAGTTCAAATGTTTTGCCTCCCACGTTTCNGTTTCAAGAAGCTATTCGAGATAA",
+                     "AAGTTCAAATGTTTTGCCDTCCCACGTTTCNGTTTCAAGAAGCTATTYCGAGATAA",
                      "ATCGCTCCGTGGTCACAGGACTTAGAAAGGTGGAGGTAAACACACACAAGCATT",
-                     "ATAAGATAAGAAGTAACAGATGAATTAGTTGAAAGGGACTGATTTCGGGGGAA"))
+                     "ATAAGATAAGAAGTAACAGATGAATTAGTTGAAAGGGACTGATTTCGGGGGAAN"))
     updateTextAreaInput(
       session, "plainFeaturesInput",
       value = paste0(
@@ -87,7 +87,7 @@ shinyServer(function(input, output, session) {
   })
 
   observe({
-    req(input$plainFeaturesInput, values$sequence)
+    req(input$plainFeaturesInput, values$sequence[["Plain"]] )
     cat("Parsing plain features\n")
     isolate({
       getSep <- function(sep) {
@@ -398,10 +398,7 @@ shinyServer(function(input, output, session) {
 
 
   cuteSeqResult <- reactive({
-    # req(flatMap(), nrow(values$workingPalette) != 0)#, values$redraw)
-    req(nrow(values$workingPalette) != 0, values$workingSequence)#, values$redraw)
-    # print(values$workingPalette)
-    # req(autoPalette())
+    req(nrow(values$workingPalette) != 0)#, values$workingSequence)#, values$redraw)
     cat("Generating cuteSeqResult\n")
     isolate({
       HTML(
@@ -421,8 +418,6 @@ shinyServer(function(input, output, session) {
   })
 
   output$cuteSeqHtml <- renderUI({
-    # input$markAmbiguity
-
     req(cuteSeqResult())
     cat("Generating cuteSeqHtml UI\n")
     list(
