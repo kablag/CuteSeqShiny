@@ -349,15 +349,11 @@ shinyServer(function(input, output, session) {
   observe({
     ids <- str_match(names(input), "Color_(.*)") %>>%
       na.omit()
-    values$updateWorkingPalette
-    values$paletteLoaded
-    # req(input$Color_mismatchColor)
-
-
-    req( !values$invalidatePalette,
+    req(!values$invalidatePalette,
          nrow(ids) != 0)
     sapply(ids[, 1], function(x) input[[x]])
     isolate({
+      # print(values$paletteUpdatesCounter)
       values$paletteUpdatesCounter <- values$paletteUpdatesCounter - 1
       req(all(autoPalette()[,idParam] %in% ids[,2]),
           values$paletteUpdatesCounter <= 0)
@@ -435,7 +431,6 @@ shinyServer(function(input, output, session) {
           uiElementName <- sprintf("Color_%s", genParamID(param))
           if (!is.null(input[[uiElementName]]) &&
               input[[uiElementName]] != color) {
-            # print(paste(uiElementName, "ok"))
             colourpicker::updateColourInput(
               session,
               uiElementName,
