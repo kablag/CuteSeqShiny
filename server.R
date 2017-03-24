@@ -8,6 +8,14 @@ library(RColorBrewer)
 
 source("generic.R")
 
+options(digits.secs=2)
+writeLogs <- TRUE
+
+createLogEntry <- function(text) {
+  if (writeLogs)
+    cat(sprintf("%s: %s\n", Sys.time(), text))
+}
+
 shinyServer(function(input, output, session) {
   session$onSessionEnded(function() {
     stopApp()
@@ -27,13 +35,13 @@ shinyServer(function(input, output, session) {
 
   gbFile <- reactive({
     req(input$gbFile)
-    cat("Loading GenBank file\n")
+    createLogEntry("Loading GenBank file")
     readGenBank(input$gbFile$datapath)
   })
 
   output$seqNameSelectUI <- renderUI({
     req(gbFile())
-    cat("Generating seqNameSelectUI\n")
+    createLogEntry("Generating seqNameSelectUI")
     selectInput("seqNameSelect",
                 "Select Sequence",
                 names(gbFile()@sequence))
@@ -41,7 +49,7 @@ shinyServer(function(input, output, session) {
 
   observe({
     req(input$seqNameSelect)
-    cat("Selecting sequence from GenBank file\n")
+    createLogEntry("Selecting sequence from GenBank file")
     isolate({
       values$features[["GenBank"]] <- gbFile()@other_features %>>%
         as.data.frame() %>>%
@@ -58,7 +66,7 @@ shinyServer(function(input, output, session) {
   })
 
   observeEvent(input$plainInputExample, {
-    cat("Loading plain input example\n")
+    createLogEntry("Loading plain input example")
     updateTextAreaInput(
       session, "plainSequenceInput",
       value = paste0("RATTTTTGCCACATTRGAAGGAAAATTATTTCCACCAAGATTTCCCT",
@@ -78,7 +86,7 @@ shinyServer(function(input, output, session) {
 
   observe({
     req(input$plainSequenceInput)
-    cat("Parsing plain sequence\n")
+    createLogEntry("Parsing plain sequence")
     isolate({
       dnaseq <- input$plainSequenceInput %>>%
         clearSeq() %>>%
@@ -89,7 +97,7 @@ shinyServer(function(input, output, session) {
 
   observe({
     req(input$plainFeaturesInput, values$sequence[["Plain"]] )
-    cat("Parsing plain features\n")
+    createLogEntry("Parsing plain features")
     isolate({
       getSep <- function(sep) {
         switch(sep,
@@ -203,7 +211,7 @@ shinyServer(function(input, output, session) {
     input$markAmbiguity
     input$considerStrand
     req(input$inputTypeTabs)
-    cat("Select working seq and features by input tab\n")
+    createLogEntry("Select working seq and features by input tab")
     values$workingFeatures <- values$features[[input$inputTypeTabs]]
     values$workingSequence <- values$sequence[[input$inputTypeTabs]]
     isolate({
@@ -214,7 +222,7 @@ shinyServer(function(input, output, session) {
 
   output$colorByUI <- renderUI({
     req(values$workingFeatures)
-    cat("Creating colorBy UI\n")
+    createLogEntry("Creating colorBy UI")
     selectInput("colorBy",
                 "Color by",
                 colnames(values$workingFeatures),
@@ -224,7 +232,7 @@ shinyServer(function(input, output, session) {
 
   output$labelByUI <- renderUI({
     req(values$workingFeatures)
-    cat("Creating labelBy UI\n")
+    createLogEntry("Creating labelBy UI")
     selectInput("labelBy",
                 "Label by",
                 colnames(values$workingFeatures),
@@ -233,7 +241,7 @@ shinyServer(function(input, output, session) {
   })
   output$limitSeqSliderUI <- renderUI({
     req(values$workingSequence)
-    cat("Creating limitSeqSlider UI\n")
+    createLogEntry("Creating limitSeqSlider UI")
     sliderInput("limitSeqSlider",
                 "Limit Sequence",
                 min = 1 + values$workingSequence@offset,
@@ -245,7 +253,7 @@ shinyServer(function(input, output, session) {
 
   output$featuresTbl <- DT::renderDataTable({
     req(values$workingFeatures)
-    cat("Updating Features table\n")
+    createLogEntry("Updating Features table")
     dt <- {
       if (input$inputTypeTabs == "GenBank") {
         values$workingFeatures
@@ -266,7 +274,7 @@ shinyServer(function(input, output, session) {
     req(input$labelBy,
         values$workingSequence,
         values$workingFeatures[[input$labelBy]])
-    cat("Generating flat map\n")
+    createLogEntry("Generating flat map")
     ft <- {
       if (input$inputTypeTabs == "GenBank") {
         values$workingFeatures
@@ -296,7 +304,7 @@ shinyServer(function(input, output, session) {
     flatMap()
     req(input$colorBy,
         input$inputTypeTabs, values$workingFeatures)
-    cat("Generating auto palette\n")
+    createLogEntry("Generating auto palette")
     isolate({
       generatePalette(
         {
@@ -322,7 +330,7 @@ shinyServer(function(input, output, session) {
 
   output$changePaletteUI <- renderUI({
     req(autoPalette())
-    cat("Creating palette inputs\n")
+    createLogEntry("Creating palette inputs")
     isolate({
       # ids <- str_match(names(input), "Color_(.*)") %>>%
       #   na.omit()
@@ -355,7 +363,7 @@ shinyServer(function(input, output, session) {
           values$paletteUpdatesCounter <= 0)
       ids <- data.table(ids)
       # req(!values$invalidatePalette)
-      cat("Updating working palette\n")
+      createLogEntry("Updating working palette")
 
       setnames(ids, c("V1", "V2"), c("uiId", "idParam"))
       sapply(ids[!(idParam %in% autoPalette()[, idParam]),
@@ -375,7 +383,7 @@ shinyServer(function(input, output, session) {
 
   cuteSeqResult <- reactive({
     req(nrow(values$workingPalette) != 0)#, values$workingSequence)#, values$redraw)
-    cat("Generating cuteSeqResult\n")
+    createLogEntry("Generating cuteSeqResult")
     input$includeLegend
     input$linesWidth
     input$spacingEveryNth
@@ -400,7 +408,7 @@ shinyServer(function(input, output, session) {
 
   output$cuteSeqHtml <- renderUI({
     req(cuteSeqResult())
-    cat("Generating cuteSeqHtml UI\n")
+    createLogEntry("Generating cuteSeqHtml UI")
     list(
       cuteSeqResult()
     )
@@ -418,7 +426,7 @@ shinyServer(function(input, output, session) {
 
   observe({
     req(input$loadPalette$datapath)
-    cat("Loading Palette\n")
+    createLogEntry("Loading Palette")
     isolate({
       values$paletteUpdatesCounter <- 0L
       tbl <- fread(input$loadPalette$datapath)[
