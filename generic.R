@@ -156,12 +156,11 @@ cuteSeq <- function(flatMap,
                     linesWidth = 60,
                     spacingEveryNth = 10) {
   # gbS <<- gbSequence
-
-
+  flatMapCopy <- copy(flatMap)
   if (spacingEveryNth)
-    flatMap[seq(spacingEveryNth, nrow(flatMap), spacingEveryNth),
+    flatMapCopy[seq(spacingEveryNth, nrow(flatMapCopy), spacingEveryNth),
             gbSeq := sprintf("<span style='letter-spacing:0.5em;'>%s</span>", gbSeq)]
-  flatMap[,
+  flatMapCopy[,
           coloredSeq :=
             ifelse(dif,
                    ifelse(map == 0,
@@ -195,7 +194,7 @@ cuteSeq <- function(flatMap,
                    gbSeq),
           by = seqI]
   if (linesWidth != 0) {
-    flatMap[seq(1, nrow(flatMap), by = linesWidth),
+    flatMapCopy[seq(1, nrow(flatMapCopy), by = linesWidth),
             coloredSeq := sprintf("<br>%s", coloredSeq)]
   }
 
@@ -212,7 +211,7 @@ cuteSeq <- function(flatMap,
               # paste0(collapse = "<br>")
                 htmlTable::htmlTable(seqPalette[!"Mismatch Color",
                                                 Color := sprintf("<span style='background-color: %s;'>ATGC</span>", color)]
-                  [!"Mismatch Color", Features := paste(unique(flatMap[typeID == param, label]), collapse = ", "),
+                  [!"Mismatch Color", Features := paste(unique(flatMapCopy[typeID == param, label]), collapse = ", "),
                     by = param]
                   [!"Mismatch Color", Strand :=  str_extract(param,"[-\\+]$")]
                   [!"Mismatch Color", Param :=  str_replace(param,"[-\\+]$", "")]
@@ -221,11 +220,11 @@ cuteSeq <- function(flatMap,
                   rnames = FALSE, header = c(" Color ", " Color Group Name ", " Strand ", " Features "),
                   align = paste(rep('l', 3), collapse = ''))
               ,
-              ifelse(any(flatMap[, mismatchHere] == TRUE),
+              ifelse(any(flatMapCopy[, mismatchHere] == TRUE),
                      sprintf("<br><span style='background-color: %s'>&emsp;&emsp;</span>&emsp;<b>Mismatch</b>",
                              seqPalette["Mismatch Color", color]),
                      ""),
-              ifelse(any(flatMap[, intersectionHere] == TRUE),
+              ifelse(any(flatMapCopy[, intersectionHere] == TRUE),
                      "<br><span style='text-decoration:underline;'>&emsp;&emsp;</span>&emsp;<b>Intersection</b>",
                      ""))
   }
@@ -241,7 +240,7 @@ cuteSeq <- function(flatMap,
   paste0(
     "<p>",
     # styles,
-    paste0(c(flatMap$coloredSeq, "</span>"), collapse = ""),
+    paste0(c(flatMapCopy$coloredSeq, "</span>"), collapse = ""),
     "<br><br>",
     legendTbl,
     "</p>")

@@ -36,7 +36,6 @@ shinyUI(fluidPage(
                         "</div>")),
             fluidRow(
               column(2,
-                     checkboxInput("markAmbiguity", "Mark Ambiguity", TRUE),
                      actionButton("plainInputExample", "Example")
               )
             )
@@ -124,7 +123,7 @@ shinyUI(fluidPage(
                               "5" = "5",
                               "10" = "10"),
                          selected = "10"),
-
+             checkboxInput("markAmbiguity", "Mark Ambiguity", TRUE),
              checkboxInput("includeLegend", "Include Legend", TRUE)#,
              # colourpicker::colourInput("mismatchColor",
              #                           "Mismatch Color",
@@ -180,7 +179,7 @@ shinyUI(fluidPage(
            htmlOutput("cuteSeqHtml")))
   ),
   div(
-    style = "margin-bottom:5px;",
+    style = "margin-bottom:8px;margin-left:8px;",
     HTML(paste0(
       "Konstantin Blagodatskikh (",
       tags$a(href = "mailto:k.blag@yandex.ru?Subject=CuteSeq",

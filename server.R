@@ -400,6 +400,9 @@ shinyServer(function(input, output, session) {
   cuteSeqResult <- reactive({
     req(nrow(values$workingPalette) != 0)#, values$workingSequence)#, values$redraw)
     cat("Generating cuteSeqResult\n")
+    input$includeLegend
+    input$linesWidth
+    input$spacingEveryNth
     isolate({
       HTML(
         paste0(
