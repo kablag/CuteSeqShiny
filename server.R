@@ -21,7 +21,8 @@ shinyServer(function(input, output, session) {
     sequence = list(
       GenBank = NULL,
       Plain = NULL
-    )
+    ),
+    paletteUpdatesCounter = 0
   )
 
   gbFile <- reactive({
@@ -297,7 +298,7 @@ shinyServer(function(input, output, session) {
         input$inputTypeTabs, values$workingFeatures)
     cat("Generating auto palette\n")
     isolate({
-      palette <- generatePalette(
+      generatePalette(
         {
           if (input$inputTypeTabs == "GenBank") {
             values$workingFeatures
@@ -316,35 +317,8 @@ shinyServer(function(input, output, session) {
             NULL
         }
       )
-      # removeUI(
-      #   selector = "div:has(> #color_uis)",
-      #   immediate = TRUE
-      # )
-      palette
     })
   })
-  # observe({
-  #   req(input$colorBy,
-  #       values$workingFeatures,
-  #       values$workingFeatures[[input$colorBy]],
-  #       !input$lockPalette)
-  #   cat("Generating auto palette\n")
-  #   values$autoPalette <-
-  #       generatePalette(
-  #         {
-  #           if (input$inputTypeTabs == "GenBank") {
-  #             values$workingFeatures
-  #           } else {
-  #             values$workingFeatures[start != -1]
-  #           }
-  #         },
-  #         input$colorBy,
-  #         input$considerStrand,
-  #         # input$mismatchColor
-  #         "#7FFF00"
-  #       )
-  #
-  # })
 
   output$changePaletteUI <- renderUI({
     req(autoPalette())
@@ -364,7 +338,7 @@ shinyServer(function(input, output, session) {
   })
 
   # workingPalette <- reactive({
-    observe({
+  observe({
     ids <- str_match(names(input), "Color_(.*)") %>>%
       na.omit()
     values$updateWorkingPalette
@@ -376,22 +350,24 @@ shinyServer(function(input, output, session) {
          nrow(ids) != 0)
     sapply(ids[, 1], function(x) input[[x]])
     isolate({
-      req(all(autoPalette()[,idParam] %in% ids[,2]))
-    ids <- data.table(ids)
-    # req(!values$invalidatePalette)
-    cat("Updating working palette\n")
+      values$paletteUpdatesCounter <- values$paletteUpdatesCounter - 1
+      req(all(autoPalette()[,idParam] %in% ids[,2]),
+          values$paletteUpdatesCounter <= 0)
+      ids <- data.table(ids)
+      # req(!values$invalidatePalette)
+      cat("Updating working palette\n")
 
-    setnames(ids, c("V1", "V2"), c("uiId", "idParam"))
-    sapply(ids[!(idParam %in% autoPalette()[, idParam]),
-               uiId],
-           function(id) removeUI(
-             selector = sprintf("div:has(> %s)", id),
-             immediate = FALSE
-           ))
-    ids <- ids[idParam %in% autoPalette()[, idParam]]
-    palette <- sapply(ids[, uiId], function(x) input[[x]])
-    values$workingPalette <-
-      autoPalette()[idParam %in% ids[, idParam], .(param, idParam, color = palette)]
+      setnames(ids, c("V1", "V2"), c("uiId", "idParam"))
+      sapply(ids[!(idParam %in% autoPalette()[, idParam]),
+                 uiId],
+             function(id) removeUI(
+               selector = sprintf("div:has(> %s)", id),
+               immediate = FALSE
+             ))
+      ids <- ids[idParam %in% autoPalette()[, idParam]]
+      palette <- sapply(ids[, uiId], function(x) input[[x]])
+      values$workingPalette <-
+        autoPalette()[idParam %in% ids[, idParam], .(param, idParam, color = palette)]
 
     })
   })
@@ -403,7 +379,9 @@ shinyServer(function(input, output, session) {
     input$includeLegend
     input$linesWidth
     input$spacingEveryNth
+    input$featuresTbl_rows_selected
     isolate({
+      values$paletteUpdatesCounter <- 0L
       HTML(
         paste0(
           "<div style='font-family:monospace;overflow:hidden;",
@@ -439,19 +417,22 @@ shinyServer(function(input, output, session) {
   )
 
   observe({
-    req(input$loadPalette)
+    req(input$loadPalette$datapath)
     cat("Loading Palette\n")
     isolate({
+      values$paletteUpdatesCounter <- 0L
       tbl <- fread(input$loadPalette$datapath)[
         ,
         {
           uiElementName <- sprintf("Color_%s", genParamID(param))
-          if (!is.null(input[[uiElementName]])) {
+          if (!is.null(input[[uiElementName]]) &&
+              input[[uiElementName]] != color) {
             # print(paste(uiElementName, "ok"))
             colourpicker::updateColourInput(
               session,
               uiElementName,
               value = color)
+            values$paletteUpdatesCounter <- values$paletteUpdatesCounter + 1L
             # anyUpdated <- TRUE
             # invalidateLater(1000)
           }
