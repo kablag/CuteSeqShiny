@@ -155,7 +155,6 @@ cuteSeq <- function(flatMap,
                     includeLegend = TRUE,
                     linesWidth = 60,
                     spacingEveryNth = 10) {
-  # gbS <<- gbSequence
   flatMapCopy <- copy(flatMap)
   if (spacingEveryNth)
     flatMapCopy[seq(spacingEveryNth, nrow(flatMapCopy), spacingEveryNth),
@@ -201,14 +200,7 @@ cuteSeq <- function(flatMap,
   legendTbl <- ""
   if (includeLegend) {
     legendTbl <-
-      sprintf("%s<br>%s%s",
-              # seqPalette[,
-              #            toprint :=
-              #              paste0(sprintf("<span style='background-color: %s'>&emsp;&emsp;</span> <b>%s</b> ",
-              #                             color, param),
-              #                     paste(features[get(colorBy) == param, get(labelBy)], collapse = ",&ensp;")),
-              #            by = param][, toprint] %>>%
-              # paste0(collapse = "<br>")
+      sprintf("%s<br>%s%s%s",
                 htmlTable::htmlTable(seqPalette[!"Mismatch Color",
                                                 Color := sprintf("<span style='background-color: %s;'>ATGC</span>", color)]
                   [!"Mismatch Color", Features := paste(unique(flatMapCopy[typeID == param, label]), collapse = ", "),
@@ -226,6 +218,9 @@ cuteSeq <- function(flatMap,
                      ""),
               ifelse(any(flatMapCopy[, intersectionHere] == TRUE),
                      "<br><span style='text-decoration:underline;'>&emsp;&emsp;</span>&emsp;<b>Intersection</b>",
+                     ""),
+              ifelse(any(flatMapCopy[, ambiguityHere] == TRUE),
+                     "<br><b>ATGC</b>&emsp;<b>Ambiguity</b>",
                      ""))
   }
   # styles <-
