@@ -4,8 +4,8 @@ cuteSeqVersion <- 1.2
 
 shinyUI(fluidPage(
   tags$head(
-    includeScript("www/js/allowTab.js"),
-    includeScript("www/js/google-analytics.js")
+    includeScript("www/js/allowTab.js")
+    # , includeScript("www/js/google-analytics.js")
   ),
   titlePanel(
     HTML(
