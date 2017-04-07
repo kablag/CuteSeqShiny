@@ -77,11 +77,11 @@ shinyServer(function(input, output, session) {
     updateTextAreaInput(
       session, "plainFeaturesInput",
       value = paste0(
-        "1; ABO-f; TACCAACTACAAAAATGGAA; primer\n",
-        "2; ABO-wt; (FAM)-TCCCACGTTTCGGTTTC-(BHQ1); probe_wt\n",
-        "3; ABO-m; (hex)-tttctgtttcaagaagc(t-lna)att-(bhq1); probe_m\n",
-        "4; ABO-r; AGTCCTGTGACCACGGAG; primer\n",
-        "5; ABO-r2; TGCTTGTGTGTGTTTACCGCCA; primer-r2; 1"))
+        "1; ABO-f; TACCAACTACAAAAATGGAA\n",
+        "2; ABO-wt; (FAM)-TCCCACGTTTCGGTTTC-(BHQ1); FAM\n",
+        "3; ABO-m; (hex)-tttctgtttcaagaagc(t-lna)att-(bhq1); HEX\n",
+        "4; ABO-r; AGTCCTGTGACCACGGAG; ROX\n",
+        "5; ABO-r2; TGCTTGTGTGTGTTTACCGCCA; primer; 1"))
   })
 
   observe({
@@ -93,6 +93,7 @@ shinyServer(function(input, output, session) {
         Biostrings::DNAString()
       values$sequence[["Plain"]] <- dnaseq
     })
+    # str_match_all(tstr, ">(.*)\\n([^>]*)")
   })
 
   observe({
@@ -303,6 +304,7 @@ shinyServer(function(input, output, session) {
   autoPalette <- reactive({
     flatMap()
     req(input$colorBy,
+        input$paletteType,
         input$inputTypeTabs, values$workingFeatures)
     createLogEntry("Generating auto palette")
     isolate({
@@ -319,10 +321,15 @@ shinyServer(function(input, output, session) {
         # input$mismatchColor
         "#7FFF00",
         {
-          if (input$lockPalette)
-            values$workingPalette
-          else
-            NULL
+          if (input$paletteType == "standard") {
+            fread("www/palettes/standard.txt")[
+              , idParam := genParamID(param)]
+          } else {
+            if (input$lockPalette)
+              values$workingPalette
+            else
+              NULL
+          }
         }
       )
     })
@@ -335,7 +342,7 @@ shinyServer(function(input, output, session) {
       # ids <- str_match(names(input), "Color_(.*)") %>>%
       #   na.omit()
       # sapply(ids[, 1], function(x) rminput[[x]] <- NULL)
-      ui <- apply(autoPalette(), 1,
+      ui <- apply(autoPalette() %>>% (? .), 1,
                   function(el){
                     colourpicker::colourInput(sprintf("Color_%s", el["idParam"]),
                                               sprintf("%s", el["param"]),
@@ -362,16 +369,27 @@ shinyServer(function(input, output, session) {
       createLogEntry("Updating working palette")
 
       setnames(ids, c("V1", "V2"), c("uiId", "idParam"))
-      sapply(ids[!(idParam %in% autoPalette()[, idParam]),
-                 uiId],
-             function(id) removeUI(
-               selector = sprintf("div:has(> %s)", id),
-               immediate = FALSE
-             ))
-      ids <- ids[idParam %in% autoPalette()[, idParam]]
+      # sapply(ids[!(idParam %in% autoPalette()[, idParam]),
+      #            uiId],
+      #        function(id) {
+      #          # print(id)
+      #          # removeUI(
+      #          #   selector = sprintf("div:has(#%s)", id),
+      #          #   immediate = FALSE)
+      #          # rlist::list.remove(input, id)
+      #          # input[[id]] <- NULL
+      #        })
+      ids <- ids[,#idParam %in% autoPalette()[, idParam],
+                 color := sapply(ids[, uiId], function(x) input[[x]])] %>>% (? .)
       palette <- sapply(ids[, uiId], function(x) input[[x]])
-      values$workingPalette <-
-        autoPalette()[idParam %in% ids[, idParam], .(param, idParam, color = palette)]
+      # values$workingPalette <-
+      #   autoPalette()[idParam %in% ids[, idParam],
+      #                 .(param, idParam, color = ids[, color])]
+      values$workingPalette <- merge(autoPalette(), ids,
+            all.x = TRUE, by = c("idParam"))[
+              !is.na(color.y), color.x := color.y][
+                ,.(param, idParam, color = color.x)]
+      # print(values$workingPalette)
 
     })
   })
@@ -392,7 +410,7 @@ shinyServer(function(input, output, session) {
           "word-break:break-all;white-space:normal;'>",
           cuteSeq(
             flatMap = flatMap(),
-            seqPalette = values$workingPalette,
+            seqPalette = values$workingPalette %>>% (? .),
             # seqPalette = autoPalette(),
             includeLegend = input$includeLegend,
             linesWidth = input$linesWidth,
@@ -403,11 +421,14 @@ shinyServer(function(input, output, session) {
   })
 
   output$cuteSeqHtml <- renderUI({
-    req(cuteSeqResult())
-    createLogEntry("Generating cuteSeqHtml UI")
-    list(
-      cuteSeqResult()
-    )
+    # req(input$calcCuteSeq)
+    # isolate({
+      req(cuteSeqResult())
+      createLogEntry("Generating cuteSeqHtml UI")
+      list(
+        cuteSeqResult()
+      )
+    # })
   })
 
 

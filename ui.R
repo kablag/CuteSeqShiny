@@ -1,6 +1,6 @@
 library(shiny)
 # library(rhandsontable)
-cuteSeqVersion <- 1.2
+cuteSeqVersion <- 1.3
 
 shinyUI(fluidPage(
   tags$head(
@@ -25,55 +25,55 @@ shinyUI(fluidPage(
       tabPanel(
         "Plain",
         div(style = "margin-top:12px;",
-        fluidRow(
-          column(
-            6,
-            HTML(paste0("<div class='form-group shiny-input-container' >",
-                        "<label for='plainSequenceInput'>Sequence</label>",
-                        "<textarea id='plainSequenceInput' class='form-control' style='height:200px;'>",
-                        "",
-                        "</textarea>",
-                        "</div>")),
             fluidRow(
-              column(2,
-                     actionButton("plainInputExample", "Example")
+              column(
+                6,
+                HTML(paste0("<div class='form-group shiny-input-container' >",
+                            "<label for='plainSequenceInput'>Sequence</label>",
+                            "<textarea id='plainSequenceInput' class='form-control' style='height:200px;'>",
+                            "",
+                            "</textarea>",
+                            "</div>")),
+                fluidRow(
+                  column(2,
+                         actionButton("plainInputExample", "Example")
+                  )
+                )
+              ),
+              # uiOutput("limitSeqSliderUI"),
+              column(6,
+                     HTML(paste0("<div class='form-group shiny-input-container'>",
+                                 "<label for='plainFeaturesInput'>Features ([ID]; Name; Sequence; [Type]; [Max Mismatch])</label>",
+                                 "<textarea id='plainFeaturesInput' class='form-control' style='height:200px;'",
+                                 " onkeydown='insertTab(this, event);'></textarea>",
+                                 "</div>")),
+                     fluidRow(
+                       column(2,
+                              selectInput("plainFeaturesInputSep",
+                                          "Separator",
+                                          c("Auto" = "auto",
+                                            ";" = ";",
+                                            "Tab" = "\t",
+                                            "Space" = " "))
+                       ),
+                       column(3,
+                              checkboxInput("allowInDels",
+                                            HTML(
+                                              paste(
+                                                "Allow Insertions/Deletions",
+                                                "(max number of indels = Max Mismatch option)",
+                                                sep = "<br>")),
+                                            FALSE)
+                       )
+                     )
               )
             )
-          ),
-          # uiOutput("limitSeqSliderUI"),
-          column(6,
-                 HTML(paste0("<div class='form-group shiny-input-container'>",
-                             "<label for='plainFeaturesInput'>Features ([ID]; Name; Sequence; [Type]; [Max Mismatch])</label>",
-                             "<textarea id='plainFeaturesInput' class='form-control' style='height:200px;'",
-                             " onkeydown='insertTab(this, event);'></textarea>",
-                             "</div>")),
-                 fluidRow(
-                   column(2,
-                          selectInput("plainFeaturesInputSep",
-                                      "Separator",
-                                      c("Auto" = "auto",
-                                        ";" = ";",
-                                        "Tab" = "\t",
-                                        "Space" = " "))
-                   ),
-                   column(3,
-                          checkboxInput("allowInDels",
-                                        HTML(
-                                          paste(
-                                            "Allow Insertions/Deletions",
-                                            "(max number of indels = Max Mismatch option)",
-                                            sep = "<br>")),
-                                        FALSE)
-                   )
-                 )
-          )
-        )
         )),
       tabPanel("GenBank",
                div(style = "margin-top:12px;",
                    fluidRow(
                      column(2,
-               fileInput("gbFile", "Upload GenBank File")))
+                            fileInput("gbFile", "Upload GenBank File")))
                )
       )
     )),
@@ -103,7 +103,7 @@ shinyUI(fluidPage(
                               "3" = "3",
                               "5" = "5",
                               "10" = "10"),
-                         selected = "10"),
+                         selected = "0"),
              checkboxInput("markAmbiguity", "Mark Ambiguity", TRUE),
              checkboxInput("includeLegend", "Include Legend", TRUE)#,
              # colourpicker::colourInput("mismatchColor",
@@ -113,21 +113,27 @@ shinyUI(fluidPage(
            )),
     column(2,
            wellPanel(
-             fluidRow(
-               column(6,
-                      checkboxInput("lockPalette",
-                                    "Lock Palette",
-                                    FALSE))
-               # ,
-               # column(6,
-               #        h5("Load Palette"))
+             radioButtons("paletteType",
+                          "Palette",
+                          list("Standard" = "standard",
+                               "ColorBrewer" = "custom")),
+             # conditionalPanel(
+             #   condition = "input.paletteType == 'custom'",
+               fluidRow(
+                 column(6,
+                        checkboxInput("lockPalette",
+                                      "Lock Palette",
+                                      TRUE))
+                 # ,
+                 # column(6,
+                 #        h5("Load Palette"))
                ),
-             fluidRow(
-               column(6,
-                      downloadButton("savePalette",
-                                     "Save Palette")),
-               column(6,
-                      HTML('<div class="form-group shiny-input-container">
+               fluidRow(
+                 column(6,
+                        downloadButton("savePalette",
+                                       "Save Palette")),
+                 column(6,
+                        HTML('<div class="form-group shiny-input-container">
                         <div class="input-group">
                         <label class="input-group-btn">
                         <span class="btn btn-default btn-file">
@@ -138,26 +144,26 @@ shinyUI(fluidPage(
                         </div>
                         </div>
                         </div>')
-                      # div(class = "form-group shiny-input-container",
-                      #     div(class = "input-group",
-                      #         tags$label(class="input-group-btn",
-                      #                    span(class="btn btn-default btn-file",
-                      #                         "Load Palette...",
-                      #                         tags$input(type="text", class="form-control", placeholder="No file selected", readonly="readonly"))),
-                      #         div(id="loadPalette_progress", class="progress progress-striped active shiny-file-input-progress",
-                      #             div(class="progress-bar"))
-                      #         ))
-                      # ,
-                      # fileInput("loadPalette",
-                      #           # "Load Palette"))
-                      #           NULL)
+                        # div(class = "form-group shiny-input-container",
+                        #     div(class = "input-group",
+                        #         tags$label(class="input-group-btn",
+                        #                    span(class="btn btn-default btn-file",
+                        #                         "Load Palette...",
+                        #                         tags$input(type="text", class="form-control", placeholder="No file selected", readonly="readonly"))),
+                        #         div(id="loadPalette_progress", class="progress progress-striped active shiny-file-input-progress",
+                        #             div(class="progress-bar"))
+                        #         ))
+                        # ,
+                        # fileInput("loadPalette",
+                        #           # "Load Palette"))
+                        #           NULL)
 
-             ),
-             uiOutput("changePaletteUI"))
-             # DT::dataTableOutput("paletteTbl")
-           ),
-    column(6,
-           htmlOutput("cuteSeqHtml")))
+                 ),
+                 uiOutput("changePaletteUI")#)
+               # DT::dataTableOutput("paletteTbl")
+             )),
+           column(6,
+                  htmlOutput("cuteSeqHtml")))
   ),
   div(
     style = "margin-bottom:8px;margin-left:8px;",

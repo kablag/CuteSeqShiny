@@ -92,10 +92,10 @@ generatePalette <- function(gbFeatures,
                          mismatchColor)) %>>%
       setkey(param)
     if (!is.null(currentPalette)) {
-    merge(newPalette, currentPalette,
-          all.x = TRUE, by = c("param"))[
-            !is.na(color.y), color.x := color.y][
-            ,.(param, idParam=idParam.x, color = color.x)]
+     merge(newPalette, currentPalette,
+            all.x = TRUE, by = c("param"))[
+              !is.na(color.y), color.x := color.y][
+                ,.(param, idParam=idParam.x, color = color.x)]
     } else {
       newPalette
     }
@@ -155,6 +155,7 @@ cuteSeq <- function(flatMap,
                     includeLegend = TRUE,
                     linesWidth = 60,
                     spacingEveryNth = 10) {
+  setkey(seqPalette, param)
   flatMapCopy <- copy(flatMap)
   if (spacingEveryNth)
     flatMapCopy[seq(spacingEveryNth, nrow(flatMapCopy), spacingEveryNth),
