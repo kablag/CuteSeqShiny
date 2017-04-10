@@ -76,6 +76,17 @@ getGeneiousTypes <- function(featuresTable) {
                 type := sub("Geneious type: (.*)", "\\1", note)]
 }
 
+getDyeFromSeq <- function(dnaseq, dyes = c("FAM", "HEX", "VIC", "ROX", "Cy5")) {
+  print(dnaseq)
+  res <- str_extract(dnaseq,
+                     regex(paste(dyes, collapse = "|"),
+                           ignore_case = TRUE))
+  if (is.na(res))
+    ""
+  else
+    toupper(res)
+}
+
 generatePalette <- function(gbFeatures,
                             colorBy,
                             considerStrand,

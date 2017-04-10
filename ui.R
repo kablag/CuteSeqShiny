@@ -123,7 +123,7 @@ shinyUI(fluidPage(
                  column(6,
                         checkboxInput("lockPalette",
                                       "Lock Palette",
-                                      TRUE))
+                                      FALSE))
                  # ,
                  # column(6,
                  #        h5("Load Palette"))

@@ -150,6 +150,7 @@ shinyServer(function(input, output, session) {
                }
         )
         setnames(dt, 1:4, c("seqnames", "seq", "type", "maxMismatch"))
+        dt[type == "", type := sapply(seq, function(x) getDyeFromSeq(x))]
         dt[type == "", type := "primer"]
         dt[is.na(maxMismatch), maxMismatch := 0]
         dt <- dt[seq != "" & seqnames != "" & type != ""]
@@ -335,8 +336,11 @@ shinyServer(function(input, output, session) {
         "#7FFF00",
         {
           if (input$paletteType == "standard") {
-            fread("www/palettes/standard.txt")[
-              , idParam := genParamID(param)]
+            if (input$lockPalette)
+              values$workingPalette
+            else
+              fread("www/palettes/standard.txt")[
+                , idParam := genParamID(param)]
           } else {
             if (input$lockPalette)
               values$workingPalette
