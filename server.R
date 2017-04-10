@@ -88,6 +88,8 @@ shinyServer(function(input, output, session) {
     req(input$plainSequenceInput)
     createLogEntry("Parsing plain sequence")
     isolate({
+      # seqs <- str_match_all(input$plainSequenceInput,
+      #                       ">(.*)\\n([^>]*)")[[1]]
       dnaseq <- input$plainSequenceInput %>>%
         clearSeq() %>>%
         Biostrings::DNAString()
@@ -259,9 +261,20 @@ shinyServer(function(input, output, session) {
       if (input$inputTypeTabs == "GenBank") {
         values$workingFeatures
       } else {
-        if (input$showUnmatched)
-          values$workingFeatures
-        else values$workingFeatures[start != -1]
+        dt <- {
+          if (input$showUnmatched)
+            values$workingFeatures
+          else values$workingFeatures[start != -1]
+        }
+        dt[,
+           mismatchesN := {
+             if (length(mismatches[[1]]))
+               length(mismatches)
+             else
+               integer(0)
+           },
+           by = seqnames]
+        dt[, -"mismatches", with = FALSE]
       }
     }
     DT::datatable(dt,
@@ -342,7 +355,7 @@ shinyServer(function(input, output, session) {
       # ids <- str_match(names(input), "Color_(.*)") %>>%
       #   na.omit()
       # sapply(ids[, 1], function(x) rminput[[x]] <- NULL)
-      ui <- apply(autoPalette() %>>% (? .), 1,
+      ui <- apply(autoPalette(), 1,
                   function(el){
                     colourpicker::colourInput(sprintf("Color_%s", el["idParam"]),
                                               sprintf("%s", el["param"]),
@@ -380,7 +393,7 @@ shinyServer(function(input, output, session) {
       #          # input[[id]] <- NULL
       #        })
       ids <- ids[,#idParam %in% autoPalette()[, idParam],
-                 color := sapply(ids[, uiId], function(x) input[[x]])] %>>% (? .)
+                 color := sapply(ids[, uiId], function(x) input[[x]])]
       palette <- sapply(ids[, uiId], function(x) input[[x]])
       # values$workingPalette <-
       #   autoPalette()[idParam %in% ids[, idParam],
@@ -410,7 +423,7 @@ shinyServer(function(input, output, session) {
           "word-break:break-all;white-space:normal;'>",
           cuteSeq(
             flatMap = flatMap(),
-            seqPalette = values$workingPalette %>>% (? .),
+            seqPalette = values$workingPalette,
             # seqPalette = autoPalette(),
             includeLegend = input$includeLegend,
             linesWidth = input$linesWidth,
@@ -435,7 +448,7 @@ shinyServer(function(input, output, session) {
   output$savePalette <- downloadHandler(
     filename = "palette.txt",
     content = function(file) {
-      write.csv(values$workingPalette[, .(param, color)] %>>% (? .),
+      write.csv(values$workingPalette[, .(param, color)],
                 file, row.names = FALSE)
     },
     contentType = "text/csv"
