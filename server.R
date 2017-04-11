@@ -100,6 +100,8 @@ shinyServer(function(input, output, session) {
 
   observe({
     req(input$plainFeaturesInput, values$sequence[["Plain"]] )
+    input$allowInDels
+    input$fixedMatchPattern
     createLogEntry("Parsing plain features")
     isolate({
       getSep <- function(sep) {
@@ -128,31 +130,31 @@ shinyServer(function(input, output, session) {
         switch(as.character(ncol(dt)),
                "2" = {
                  dt[, type := "primer"]
-                 dt[, maxMismatch := 0]
+                 dt[, maxMismatches := 0]
                },
                "3" = {
                  if (typeof(dt[[3]]) != "character")
                    return(NULL)
-                 dt[, maxMismatch := 0]
+                 dt[, maxMismatches := 0]
                },
                "4" = {
                  if (typeof(dt[[4]]) != "integer") {
                    dt[[4]] <- NULL
-                   dt[, maxMismatch := 0]
+                   dt[, maxMismatches := 0]
                  }
                },
                {
                  dt <- dt[, 1:4]
                  if (typeof(dt[[4]]) != "integer") {
                    dt[[4]] <- NULL
-                   dt[, maxMismatch := 0]
+                   dt[, maxMismatches := 0]
                  }
                }
         )
-        setnames(dt, 1:4, c("seqnames", "seq", "type", "maxMismatch"))
+        setnames(dt, 1:4, c("seqnames", "seq", "type", "maxMismatches"))
         dt[type == "", type := sapply(seq, function(x) getDyeFromSeq(x))]
         dt[type == "", type := "primer"]
-        dt[is.na(maxMismatch), maxMismatch := 0]
+        dt[is.na(maxMismatches), maxMismatches := 0]
         dt <- dt[seq != "" & seqnames != "" & type != ""]
         dt <- rbindlist(list(dt, dt),
                         use.names = TRUE, fill = FALSE, idcol = NULL)
@@ -167,9 +169,9 @@ shinyServer(function(input, output, session) {
             Biostrings::matchPattern(
               pattern,
               values$sequence[["Plain"]],
-              max.mismatch = dt[i, maxMismatch],
+              max.mismatch = dt[i, maxMismatches],
               with.indels = input$allowInDels,
-              fixed = FALSE)
+              fixed = !input$fixedMatchPattern)
 
           if (length(res)) {
             mismatches <- Biostrings::mismatch(pattern, res)
@@ -186,7 +188,7 @@ shinyServer(function(input, output, session) {
                                 seq = dt[i, seq],
                                 type = dt[i, type],
                                 strand = dt[i, strand],
-                                maxMismatch = dt[i, maxMismatch],
+                                maxMismatches = dt[i, maxMismatches],
                                 start = res[mmatchIndex]@ranges@start,
                                 end = res[mmatchIndex]@ranges@start + res[mmatchIndex]@ranges@width,
                                 mismatches = mismatches[mmatchIndex])))
@@ -199,7 +201,7 @@ shinyServer(function(input, output, session) {
                               seq = dt[i, seq],
                               type = dt[i, type],
                               strand = dt[i, strand],
-                              maxMismatch = dt[i, maxMismatch],
+                              maxMismatches = dt[i, maxMismatches],
                               start = -1L,
                               end = -1L,
                               mismatches = list(integer()))))
@@ -377,7 +379,6 @@ shinyServer(function(input, output, session) {
          nrow(ids) != 0)
     sapply(ids[, 1], function(x) input[[x]])
     isolate({
-      # print(values$paletteUpdatesCounter)
       values$paletteUpdatesCounter <- values$paletteUpdatesCounter - 1
       req(all(autoPalette()[,idParam] %in% ids[,2]),
           values$paletteUpdatesCounter <= 0)
@@ -406,8 +407,6 @@ shinyServer(function(input, output, session) {
             all.x = TRUE, by = c("idParam"))[
               !is.na(color.y), color.x := color.y][
                 ,.(param, idParam, color = color.x)]
-      # print(values$workingPalette)
-
     })
   })
 

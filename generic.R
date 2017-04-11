@@ -77,7 +77,6 @@ getGeneiousTypes <- function(featuresTable) {
 }
 
 getDyeFromSeq <- function(dnaseq, dyes = c("FAM", "HEX", "VIC", "ROX", "Cy5")) {
-  print(dnaseq)
   res <- str_extract(dnaseq,
                      regex(paste(dyes, collapse = "|"),
                            ignore_case = TRUE))
@@ -211,6 +210,7 @@ cuteSeq <- function(flatMap,
 
   legendTbl <- ""
   if (includeLegend) {
+    fmc <<- flatMapCopy
     legendTbl <-
       sprintf("%s<br>%s%s%s",
                 htmlTable::htmlTable(seqPalette[!"Mismatch Color",
@@ -221,18 +221,24 @@ cuteSeq <- function(flatMap,
                   [!"Mismatch Color", Param :=  str_replace(param,"[-\\+]$", "")]
                   # [,c("param", "strand") = list(str_match(param, "(.*) ?([+-])$?"))]
                   [!"Mismatch Color", .(Color, Param, Strand, Features)],
-                  rnames = FALSE, header = c(" Color ", " Color Group Name ", " Strand ", " Features "),
-                  align = paste(rep('l', 3), collapse = ''))
+                  rnames = FALSE, header = c("Color", "Group", "Strand", "Features"),
+                  align.header = paste(rep('c', 4), collapse = ''),
+                  align = paste(rep('c', 4), collapse = ''))
               ,
               ifelse(any(flatMapCopy[, mismatchHere] == TRUE),
-                     sprintf("<br><span style='background-color: %s'>&emsp;&emsp;</span>&emsp;<b>Mismatch</b>",
+                     sprintf("<br><span style='background-color: %s'>&emsp;&emsp;</span>&emsp;Mismatch",
                              seqPalette["Mismatch Color", color]),
                      ""),
               ifelse(any(flatMapCopy[, intersectionHere] == TRUE),
-                     "<br><span style='text-decoration:underline;'>&emsp;&emsp;</span>&emsp;<b>Intersection</b>",
+                     "<br><span style='text-decoration:underline;'>&emsp;&emsp;</span>&emsp;Intersection",
                      ""),
               ifelse(any(flatMapCopy[, ambiguityHere] == TRUE),
-                     "<br><b>ATGC</b>&emsp;<b>Ambiguity</b>",
+                     {
+                       ambNuc <- unique(flatMapCopy[ambiguityHere == TRUE, gbSeq])
+                       sprintf("<br><b>MRWS</b>&emsp;Ambiguity (%s)",
+                               paste(paste(ambNuc, Biostrings::IUPAC_CODE_MAP[ambNuc], sep = " = "),
+                                     collapse = ", "))
+                     },
                      ""))
   }
   # styles <-

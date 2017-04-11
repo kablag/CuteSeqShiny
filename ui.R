@@ -64,7 +64,15 @@ shinyUI(fluidPage(
                                                 "(max number of indels = Max Mismatch option)",
                                                 sep = "<br>")),
                                             FALSE)
-                       )
+                       ),
+                       column(3,
+                              checkboxInput("fixedMatchPattern",
+                                            HTML(
+                                              paste(
+                                                "Not Fixed Match Pattern",
+                                                "(ambiguity can match any associated letter)",
+                                                sep = "<br>")),
+                                            TRUE))
                      )
               )
             )
