@@ -210,7 +210,6 @@ cuteSeq <- function(flatMap,
 
   legendTbl <- ""
   if (includeLegend) {
-    fmc <<- flatMapCopy
     legendTbl <-
       sprintf("%s<br>%s%s%s",
                 htmlTable::htmlTable(seqPalette[!"Mismatch Color",
