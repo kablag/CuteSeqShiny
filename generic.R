@@ -53,14 +53,12 @@ getColors <- function(ncolors) {
 }
 
 addFlat <- function(flatMap, ID, start, end, mismatches = NULL) {
-  if ((start < data.table::first(flatMap$seqI) &&
-       end < data.table::first(flatMap$seqI)) ||
-      (start < data.table::first(flatMap$seqI) &&
-       end < data.table::first(flatMap$seqI)))
+  if (end < data.table::first(flatMap$seqI) ||
+      start > data.table::last(flatMap$seqI))
     return(NULL)
   if (start < data.table::first(flatMap$seqI))
     start <- data.table::first(flatMap$seqI)
-  if (end > data.table::last(flatMap$seqI))
+  if (end > (data.table::last(flatMap$seqI) + 1))
     end <- data.table::last(flatMap$seqI)
   subMap <- flatMap[J(start:(end - 1))]
   hasMapI <- subMap[!is.na(map), seqI]
@@ -183,10 +181,6 @@ cuteSeq <- function(flatMap,
                                          gbSeq)
                                    },
                                  sprintf("</span>%s", gbSeq)),
-                          # ifelse(map == -1,
-                          #        sprintf("</span><span style='background-color: %s'>%s",
-                          #                mismatchColor,
-                          #                gbSeq),
                           sprintf("</span><span style='background-color: %s;%s%s' title='%s'>%s",
                                   ifelse(mismatchHere,
                                          seqPalette["Mismatch Color", color],
