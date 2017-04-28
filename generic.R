@@ -89,24 +89,24 @@ generatePalette <- function(gbFeatures,
                             considerStrand,
                             mismatchColor,
                             currentPalette) {
-    if (considerStrand) {
-      gbFeatures[, c(colorBy) := paste(get(colorBy), strand)]
-    }
-    uniqueColorByParams <- unique(gbFeatures[, get(colorBy)])
-    newPalette <- data.table(param = c(uniqueColorByParams, "Mismatch Color"),
-               idParam = c(genParamID(uniqueColorByParams),
-                           genParamID("Mismatch Color")),
-               color = c(getColors(length(uniqueColorByParams)),
-                         mismatchColor)) %>>%
-      setkey(param)
-    if (!is.null(currentPalette)) {
-     merge(newPalette, currentPalette,
-            all.x = TRUE, by = c("param"))[
-              !is.na(color.y), color.x := color.y][
-                ,.(param, idParam=idParam.x, color = color.x)]
-    } else {
-      newPalette
-    }
+  if (considerStrand) {
+    gbFeatures[, c(colorBy) := paste(get(colorBy), strand)]
+  }
+  uniqueColorByParams <- unique(gbFeatures[, get(colorBy)])
+  newPalette <- data.table(param = c(uniqueColorByParams, "Mismatch Color"),
+                           idParam = c(genParamID(uniqueColorByParams),
+                                       genParamID("Mismatch Color")),
+                           color = c(getColors(length(uniqueColorByParams)),
+                                     mismatchColor)) %>>%
+    setkey(param)
+  if (!is.null(currentPalette)) {
+    merge(newPalette, currentPalette,
+          all.x = TRUE, by = c("param"))[
+            !is.na(color.y), color.x := color.y][
+              ,.(param, idParam=idParam.x, color = color.x)]
+  } else {
+    newPalette
+  }
 }
 
 genFlatMap <- function(gbSequence,
@@ -146,6 +146,12 @@ genFlatMap <- function(gbSequence,
   if (markAmbiguity) {
     flatMap[, ambiguityHere := !(gbSeq %in% c("A", "T", "G", "C"))]
   }
+  flatMap[ambiguityHere == TRUE, gbSeq :=
+            sapply(gbSeq, function(ambSeq)
+              sprintf("[%s]",
+                      paste(strsplit(Biostrings::IUPAC_CODE_MAP[ambSeq], NULL)[[1]],
+                            collapse = "/")))
+          ]
   flatMap[!is.na(map), label := features[map, get(labelBy)]]
   flatMap[!is.na(map), typeID := features[map, get(colorBy)]]
   flatMap[is.na(map), map := 0]
@@ -167,39 +173,39 @@ cuteSeq <- function(flatMap,
   flatMapCopy <- copy(flatMap)
   if (spacingEveryNth)
     flatMapCopy[seq(spacingEveryNth, nrow(flatMapCopy), spacingEveryNth),
-            gbSeq := sprintf("<span style='letter-spacing:0.5em;'>%s</span>", gbSeq)]
+                gbSeq := sprintf("<span style='letter-spacing:0.5em;'>%s</span>", gbSeq)]
   flatMapCopy[,
-          coloredSeq :=
-            ifelse(dif,
-                   ifelse(map == 0,
-                          ifelse(ambiguityHere,
-                                 {
-                                 sprintf("%s<span style='font-weight:bold;'>%s",
-                                         ifelse(!is.na(data.table::shift(typeID, fill = FALSE)),
-                                                "</span>",
-                                                ""),
-                                         gbSeq)
-                                   },
-                                 sprintf("</span>%s", gbSeq)),
-                          sprintf("</span><span style='background-color: %s;%s%s' title='%s'>%s",
-                                  ifelse(mismatchHere,
-                                         seqPalette["Mismatch Color", color],
-                                         seqPalette[typeID, color]),
-                                  ifelse(intersectionHere,
-                                         "text-decoration:underline;",
-                                         ""),
-                                  ifelse(ambiguityHere,
-                                         "font-weight:bold;",
-                                         ""),
-                                  label,
-                                  gbSeq)
-                          #)
-                   ),
-                   gbSeq),
-          by = seqI]
+              coloredSeq :=
+                ifelse(dif,
+                       ifelse(map == 0,
+                              ifelse(ambiguityHere,
+                                     {
+                                       sprintf("%s<span style='font-weight:bold;'>%s",
+                                               ifelse(!is.na(data.table::shift(typeID, fill = FALSE)),
+                                                      "</span>",
+                                                      ""),
+                                               gbSeq)
+                                     },
+                                     sprintf("</span>%s", gbSeq)),
+                              sprintf("</span><span style='background-color: %s;%s%s' title='%s'>%s",
+                                      ifelse(mismatchHere,
+                                             seqPalette["Mismatch Color", color],
+                                             seqPalette[typeID, color]),
+                                      ifelse(intersectionHere,
+                                             "text-decoration:underline;",
+                                             ""),
+                                      ifelse(ambiguityHere,
+                                             "font-weight:bold;",
+                                             ""),
+                                      label,
+                                      gbSeq)
+                              #)
+                       ),
+                       gbSeq),
+              by = seqI]
   if (linesWidth != 0) {
     flatMapCopy[seq(1, nrow(flatMapCopy), by = linesWidth),
-            coloredSeq := sprintf("<br>%s", coloredSeq)]
+                coloredSeq := sprintf("<br>%s", coloredSeq)]
   }
 
   legendTbl <- ""
@@ -207,15 +213,15 @@ cuteSeq <- function(flatMap,
     legendTbl <-
       sprintf("%s%s%s%s",
               shiny::renderTable(seqPalette[!"Mismatch Color",
-                                     Color := sprintf("<span style='background-color: %s;'>ATGC</span>", color)]
-                          [!"Mismatch Color", Features := paste(unique(flatMapCopy[typeID == param, label]), collapse = ", "),
-                            by = param]
-                          [!"Mismatch Color", Strand :=  str_extract(param,"[-\\+]$")]
-                          [!"Mismatch Color", Param :=  str_replace(param,"[-\\+]$", "")]
-                          # [,c("param", "strand") = list(str_match(param, "(.*) ?([+-])$?"))]
-                          [!"Mismatch Color", .(Color, Param, Strand, Features)],
-                          colnames = FALSE,
-                          sanitize.text.function = function(x) x)()
+                                            Color := sprintf("<span style='background-color: %s;'>ATGC</span>", color)]
+                                 [!"Mismatch Color", Features := paste(unique(flatMapCopy[typeID == param, label]), collapse = ", "),
+                                   by = param]
+                                 [!"Mismatch Color", Strand :=  str_extract(param,"[-\\+]$")]
+                                 [!"Mismatch Color", Param :=  str_replace(param,"[-\\+]$", "")]
+                                 # [,c("param", "strand") = list(str_match(param, "(.*) ?([+-])$?"))]
+                                 [!"Mismatch Color", .(Color, Param, Strand, Features)],
+                                 colnames = FALSE,
+                                 sanitize.text.function = function(x) x)()
               ,
               ifelse(any(flatMapCopy[, mismatchHere] == TRUE),
                      sprintf("<span style='background-color: %s'>&emsp;&emsp;</span>&emsp;Mismatch",
