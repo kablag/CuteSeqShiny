@@ -1,6 +1,6 @@
 library(shiny)
 # library(rhandsontable)
-cuteSeqVersion <- 1.3
+cuteSeqVersion <- 1.4
 
 shinyUI(fluidPage(
   tags$head(

@@ -232,10 +232,11 @@ cuteSeq <- function(flatMap,
                      ""),
               ifelse(any(flatMapCopy[, ambiguityHere] == TRUE),
                      {
-                       ambNuc <- unique(flatMapCopy[ambiguityHere == TRUE, gbSeq])
-                       sprintf("<br><b>MRWS</b>&emsp;Ambiguity (%s)",
-                               paste(paste(ambNuc, Biostrings::IUPAC_CODE_MAP[ambNuc], sep = " = "),
-                                     collapse = ", "))
+                       # ambNuc <- unique(flatMapCopy[ambiguityHere == TRUE, gbSeq])
+                       # sprintf("<br><b>MRWS</b>&emsp;Ambiguity (%s)",
+                       #         paste(paste(ambNuc, Biostrings::IUPAC_CODE_MAP[ambNuc], sep = " = "),
+                       #               collapse = ", "))
+                       "<br><b>[A/C]</b>&emsp;Ambiguity"
                      },
                      ""))
   }

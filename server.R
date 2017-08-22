@@ -99,7 +99,7 @@ shinyServer(function(input, output, session) {
   })
 
   observe({
-    req(input$plainFeaturesInput, values$sequence[["Plain"]] )
+    req(input$plainFeaturesInput, values$sequence[["Plain"]])
     input$allowInDels
     input$fixedMatchPattern
     createLogEntry("Parsing plain features")
@@ -117,7 +117,7 @@ shinyServer(function(input, output, session) {
       }
       tblSeparator <- getSep(input$plainFeaturesInputSep)
       dt <- tryCatch(
-        fread(input$plainFeaturesInput,
+        fread(paste(input$plainFeaturesInput, "\n"),
               sep = tblSeparator,
               header = FALSE,
               fill = TRUE),
@@ -174,7 +174,20 @@ shinyServer(function(input, output, session) {
               fixed = !input$fixedMatchPattern)
 
           if (length(res)) {
-            mismatches <- Biostrings::mismatch(pattern, res)
+            mismatches <-
+              tryCatch(
+                Biostrings::mismatch(pattern, res),
+                warning = function(e) {
+                  values$sequence[["Plain"]][res@ranges[[1]]] %>>% (? .)
+                  pal <- pairwiseAlignment(pattern = pattern,
+                                           subject = values$sequence[["Plain"]][res@ranges[[1]]])
+                  position <- start(indel(subject(pal)))[[1]] %>>% (? .)
+                  if (!length(position))
+                    start(indel(pattern(pal)))[[1]]
+                  else
+                    position
+                }
+              )
             sname <- {
               if (length(mismatches) > 1)
                 function(name, i) sprintf("%s~%i", name, i)
