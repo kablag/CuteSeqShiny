@@ -10,12 +10,7 @@ shinyUI(fluidPage(
   titlePanel(
     HTML(
       paste0(
-        sprintf("CuteSeq %.01f&emsp;", cuteSeqVersion),
-        tags$a(href = "http://www.evrogen.com",
-               target = "_blank",
-               tags$img(alt = "Evrogen",
-                        src = "http://evrogen.com/img/evrogen.png",
-                        border = 0))
+        sprintf("CuteSeq %.01f&emsp;", cuteSeqVersion)
       )),
     windowTitle = sprintf("CuteSeq %.01f", cuteSeqVersion)),
   wellPanel(
